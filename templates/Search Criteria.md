@@ -15,15 +15,11 @@ Delete the examples below and describe your own search.
 
 - **Roles / titles:** e.g. Product Manager, Senior Product Manager, Product Owner
 - **Seniority:** e.g. mid to senior (no junior, no internships)
-- **Location:** e.g. Remote, or EU time zones, or Berlin + relocation
-- **Work format:** e.g. full-time employment, or B2B contract — whichever you want
-- **Domain (optional):** e.g. B2C apps, fintech, AI/ML products
-- **Language (optional):** e.g. roles in English; Russian is fine; skip German-only
 
 ## Must have
 
-- e.g. Remote or hybrid in the EU
-- e.g. Product role (not project/program management)
+- e.g. A product role (not project/program management)
+- e.g. An individual-contributor or lead position
 
 ## Skip these (not a match)
 
@@ -35,6 +31,5 @@ Delete the examples below and describe your own search.
 
 Anything else that helps the AI decide. Example:
 
-> I want individual-contributor and lead **product** roles, remote-first,
-> in consumer or fintech products. Skip project managers, scrum masters,
-> and anything requiring fluent German.
+> I want individual-contributor and lead **product** roles, mid-to-senior.
+> Skip project managers, scrum masters, and delivery/program roles.

@@ -66,8 +66,8 @@ For every message, look at each URL and decide two things:
 - **`is_job`** — is this a single, real, open vacancy? A digest listing many
   roles, a networking event, a course ad, or an article → `false`.
 - **`is_match`** — does the role fit the user's **Search Criteria** (from step
-  0)? Judge title, seniority, location, work format, domain, and the
-  must-have / skip rules. When the criteria clearly exclude it → `false`.
+  0)? Judge title, seniority, and the must-have / skip rules. When the
+  criteria clearly exclude it → `false`.
   When genuinely unsure but plausibly relevant → lean `true` (better to show a
   borderline match than hide it).
 
