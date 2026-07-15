@@ -112,7 +112,9 @@ Only `is_job && is_match` vacancies are stored. Loop back to step 2 until
 Writes `matches+YYYY-MM-DD_HHMM.md` to the job folder. If zero matches, no
 file is written — say so.
 
-Report the final counts in one line and the output path. If `pull` reported
+emit-files also returns `suppressed_recent`: roles left out because the same
+company + position already appeared in the last few days. Report the final
+counts and the output path in one line, and mention `suppressed_recent` if > 0. If `pull` reported
 errors (e.g. "not a member of this channel"), mention them after the summary —
 don't retry.
 

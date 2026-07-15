@@ -66,6 +66,12 @@ def load() -> dict:
     data["folder"] = pathlib.Path(folder).expanduser()
     lang = str(data.get("lang") or DEFAULT_LANG).strip().lower()
     data["lang"] = lang if lang in ("en", "ru") else DEFAULT_LANG
+    # Export-time dedup window (days) for same company+position under a
+    # different link. Default 3; 0 disables. Power users can set it in config.
+    try:
+        data["export_dedup_days"] = max(0, int(data.get("export_dedup_days", 3)))
+    except (TypeError, ValueError):
+        data["export_dedup_days"] = 3
     return data
 
 
