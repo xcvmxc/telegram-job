@@ -59,12 +59,12 @@ def load() -> dict:
     if not isinstance(data, dict):
         print(f"Config at {CONFIG_PATH} must be a JSON object. Run /tgjobs-setup.", file=sys.stderr)
         sys.exit(2)
-    folder = (data.get("folder") or "").strip()
+    folder = str(data.get("folder") or "").strip()
     if not folder:
         print(f"Config at {CONFIG_PATH} has no \"folder\". Run /tgjobs-setup.", file=sys.stderr)
         sys.exit(2)
     data["folder"] = pathlib.Path(folder).expanduser()
-    lang = (data.get("lang") or DEFAULT_LANG).strip().lower()
+    lang = str(data.get("lang") or DEFAULT_LANG).strip().lower()
     data["lang"] = lang if lang in ("en", "ru") else DEFAULT_LANG
     return data
 

@@ -44,6 +44,12 @@ def _parse(v: str) -> tuple:
     return tuple(out) or (0,)
 
 
+def _newer(remote: str, local: str) -> bool:
+    r, l = _parse(remote), _parse(local)
+    n = max(len(r), len(l))
+    return r + (0,) * (n - len(r)) > l + (0,) * (n - len(l))
+
+
 def _today() -> str:
     return dt.date.today().isoformat()
 
@@ -71,7 +77,7 @@ def cmd_check(force: bool) -> dict:
     if not remote:
         return {"update_available": False, "local": local, "remote": None}
     return {
-        "update_available": _parse(remote) > _parse(local),
+        "update_available": _newer(remote, local),
         "local": local,
         "remote": remote,
     }

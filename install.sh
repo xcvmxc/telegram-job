@@ -72,10 +72,27 @@ fi
 if [ "$DO_UPDATE" -eq 1 ]; then
   IJ="$TGJOBS_HOME/installed.json"
   [ -f "$IJ" ] || { say "✗ nothing to update — $IJ not found. Run the installer first."; exit 1; }
-  AGENTS="$(python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print(",".join(d.get("agents",[])))' "$IJ")"
-  LANG_CHOICE="$(python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print(d.get("lang","en"))' "$IJ")"
+  AGENTS="$(python3 - "$IJ" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    a = d.get("agents") if isinstance(d, dict) and isinstance(d.get("agents"), list) else []
+except Exception:
+    a = []
+print(",".join(x for x in a if isinstance(x, str)))
+PY
+)"
+  LANG_CHOICE="$(python3 - "$IJ" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1])); l = d.get("lang") if isinstance(d, dict) else None
+except Exception:
+    l = None
+print(l if l in ("en", "ru") else "en")
+PY
+)"
   ASSUME_YES=1
-  [ -n "$AGENTS" ] || { say "✗ installed.json lists no agents."; exit 1; }
+  [ -n "$AGENTS" ] || { say "✗ installed.json lists no agents (or is corrupt) — re-run the installer normally."; exit 1; }
   say "Updating agents from installed.json: $AGENTS (language: $LANG_CHOICE)"
 fi
 
@@ -183,7 +200,12 @@ fi
 
 write_skill() { # DIR NAME DESC BODYFILE
   mkdir -p "$1"
-  { printf -- '---\nname: %s\ndescription: %s\n---\n\n' "$2" "$3"; cat "$4"; } > "$1/SKILL.md"
+  # Quote the YAML scalar: descriptions contain ': ' (and Russian), which is
+  # invalid in a plain scalar. Escape backslashes first, then double-quotes.
+  local __d="$3"
+  __d="${__d//\\/\\\\}"
+  __d="${__d//\"/\\\"}"
+  { printf -- '---\nname: %s\ndescription: "%s"\n---\n\n' "$2" "$__d"; cat "$4"; } > "$1/SKILL.md"
 }
 write_gemini_toml() { # OUT DESC BODYFILE
   mkdir -p "$(dirname "$1")"
@@ -267,7 +289,8 @@ install_gemini() {
   write_gemini_toml "$HOME/.gemini/commands/tgjobs.toml"       "$DESC_JOBS"  "$BODY/tgjobs.md"
   write_gemini_toml "$HOME/.gemini/commands/tgjobs-setup.toml" "$DESC_SETUP" "$BODY/tgjobs-setup.md"
   say "Gemini: /tgjobs + /tgjobs-setup → ~/.gemini/commands/"
-  python3 - "$HOME/.gemini/settings.json" "$TGJOBS_HOME" <<'PY'
+  local res
+  res="$(python3 - "$HOME/.gemini/settings.json" "$TGJOBS_HOME" <<'PY'
 import json, sys, pathlib, shutil
 f, home = pathlib.Path(sys.argv[1]), sys.argv[2]
 try:
@@ -279,21 +302,26 @@ if f.exists(): shutil.copyfile(f, str(f) + ".tgjobs.bak")
 f.parent.mkdir(parents=True, exist_ok=True)
 data.setdefault("security", {}).setdefault("folderTrust", {})["enabled"] = True
 allowed = data.setdefault("tools", {}).setdefault("allowed", [])
-for p in (f"run_shell_command(python3 {home}/jobs/scan.py)",
-          f"run_shell_command(python3 {home}/jobs/config.py)",
-          "run_shell_command(cat)"):
+# Directory prefix covers scan.py/config.py/setup.py/update.py in one entry.
+for p in (f"run_shell_command(python3 {home}/jobs)", "run_shell_command(cat)"):
     if p not in allowed: allowed.append(p)
 f.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 print("merged")
 PY
-  say "Gemini: settings.json — folder trust + shell allowlist merged (backup .tgjobs.bak)"
+)" || res=skip
+  if [ "$res" = merged ]; then
+    say "Gemini: settings.json — folder trust + shell allowlist merged (backup .tgjobs.bak)"
+  else
+    say "Gemini: couldn't update ~/.gemini/settings.json — set security.folderTrust.enabled=true and allow 'python3 ${TGJOBS_HOME}/jobs' yourself (nothing was changed)."
+  fi
 }
 
 install_cursor() {
   write_skill "$HOME/.cursor/skills/tgjobs"       tgjobs       "$DESC_JOBS"  "$BODY/tgjobs.md"
   write_skill "$HOME/.cursor/skills/tgjobs-setup" tgjobs-setup "$DESC_SETUP" "$BODY/tgjobs-setup.md"
   say "Cursor: skills → ~/.cursor/skills/"
-  python3 - "$HOME/.cursor/permissions.json" "$TGJOBS_HOME" <<'PY'
+  local res
+  res="$(python3 - "$HOME/.cursor/permissions.json" "$TGJOBS_HOME" <<'PY'
 import json, sys, pathlib, shutil
 f, home = pathlib.Path(sys.argv[1]), sys.argv[2]
 try:
@@ -309,7 +337,12 @@ for p in (f"python3 {home}/jobs", f"python3 {home}/telegram", "cat"):
 f.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 print("merged")
 PY
-  say "Cursor: permissions.json — terminal allowlist merged (backup .tgjobs.bak)"
+)" || res=skip
+  if [ "$res" = merged ]; then
+    say "Cursor: permissions.json — terminal allowlist merged (backup .tgjobs.bak)"
+  else
+    say "Cursor: couldn't update ~/.cursor/permissions.json — add 'python3 ${TGJOBS_HOME}/jobs' to terminalAllowlist yourself (nothing was changed)."
+  fi
 }
 
 # --- install selected agents --------------------------------------------

@@ -115,7 +115,7 @@ curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh
 
 ```
 ~/.tgjobs/                          shared, agent-neutral backend
-  jobs/{config,db,scan,setup}.py    the pipeline (stdlib Python)
+  jobs/{config,db,scan,setup,update}.py  the pipeline (stdlib Python)
   jobs/jobs.db  jobs/config.json    state + config (never overwritten)
   jobs/templates/{en,ru}/           scaffolded files, per language
   telegram/tg_scan.py               Telethon fetcher
