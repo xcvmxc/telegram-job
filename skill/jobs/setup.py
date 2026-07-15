@@ -76,7 +76,8 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     config.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     config.CONFIG_PATH.write_text(
-        json.dumps({"folder": str(folder), "lang": lang}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps({"folder": str(folder), "lang": lang, "export_dedup_days": 3},
+                   ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 

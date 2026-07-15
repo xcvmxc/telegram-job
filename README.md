@@ -94,6 +94,12 @@ run, from any agent, so repeats are cheap and never duplicate.
 **To change what you search for:** edit `Search Criteria.md`. **Sources:** edit
 `Telegram Sources.md`. Nothing else — no re-setup.
 
+**Duplicate roles:** a match isn't written again if the same **company +
+position** already appeared in the last few days — even under a different link
+from another channel. Tune the window with `"export_dedup_days"` in
+`config.json` (default `3`, `0` disables). Exact-link duplicates are always
+dropped regardless.
+
 ## Language
 
 Choose English or Russian at install. It sets the conversation language, the

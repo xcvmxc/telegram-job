@@ -407,6 +407,12 @@ def _render_table(rows: list[sqlite3.Row], when_iso: str, lang: str = "en") -> s
     return "\n".join(lines)
 
 
+def _norm_key(s: str) -> str:
+    """Collapse whitespace + lowercase, for comparing company/position across
+    postings that differ only in spacing or case."""
+    return " ".join((s or "").split()).lower()
+
+
 def cmd_emit_files(args: argparse.Namespace) -> int:
     """Write matches+<stamp>.md (localized per config lang) since --since."""
     since = args.since or "1970-01-01T00:00:00+00:00"
@@ -421,12 +427,43 @@ def cmd_emit_files(args: argparse.Namespace) -> int:
         (since,),
     ).fetchall()
 
+    # Export-time suppression: drop a role from THIS file if the same
+    # company+position was already surfaced in the last N days (even under a
+    # different link, from another channel). The row stays in the DB; only the
+    # output is filtered. Needs --since (this run's start) to define "prior",
+    # and both company + position non-empty to key on.
+    suppressed = 0
+    dedup_days = int(cfg.get("export_dedup_days", 3))
+    if args.since and dedup_days > 0 and rows:
+        window_start = (
+            dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=dedup_days)
+        ).isoformat()
+        prior = conn.execute(
+            "SELECT DISTINCT company, position FROM jobs"
+            " WHERE extracted_at >= ? AND extracted_at < ?",
+            (window_start, since),
+        ).fetchall()
+        seen = {
+            (_norm_key(r["company"]), _norm_key(r["position"]))
+            for r in prior
+            if (r["company"] or "").strip() and (r["position"] or "").strip()
+        }
+        if seen:
+            kept = []
+            for r in rows:
+                co, pos = (r["company"] or "").strip(), (r["position"] or "").strip()
+                if co and pos and (_norm_key(co), _norm_key(pos)) in seen:
+                    suppressed += 1
+                    continue
+                kept.append(r)
+            rows = kept
+
     now_utc = dt.datetime.now(dt.timezone.utc).isoformat()
     stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M")
 
     out_dir = cfg["folder"]
     out_dir.mkdir(parents=True, exist_ok=True)
-    result: dict[str, object] = {"matches_written": 0, "path": None}
+    result: dict[str, object] = {"matches_written": 0, "suppressed_recent": suppressed, "path": None}
     if rows:
         prefix = _EMIT_I18N.get(lang, _EMIT_I18N["en"])["prefix"]
         path = out_dir / f"{prefix}+{stamp}.md"
