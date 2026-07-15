@@ -40,15 +40,27 @@ results in any editor, Obsidian, Finder — whatever.
 
 ## Install
 
+**The easy way — one command, no cloning, nothing to build.** Paste this into
+your terminal:
+
 ```bash
-git clone <this-repo> telegram-job-scanner
-cd telegram-job-scanner
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash
 ```
 
-The installer copies the skill into `~/.claude/` (backing up anything it
-overwrites; your `jobs.db` and `config.json` are never touched). Then, in
-Claude Code:
+It downloads the skill and copies it into `~/.claude/`.
+
+<details>
+<summary>Prefer to clone the repo instead?</summary>
+
+```bash
+git clone https://github.com/xcvmxc/telegram-job.git
+cd telegram-job
+./install.sh
+```
+</details>
+
+The installer backs up anything it overwrites; your `jobs.db` and `config.json`
+are never touched. Then, in Claude Code:
 
 ```
 /jobs-setup
@@ -120,3 +132,7 @@ rm -rf ~/.claude/jobs ~/.claude/telegram/tg_scan.py \
 
 Your job folder (criteria, sources, results) is left alone — delete it yourself
 if you want.
+
+## License
+
+[MIT](LICENSE) — use it, fork it, ship it.
