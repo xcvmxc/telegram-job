@@ -116,6 +116,20 @@ Report the final counts in one line and the output path. If `pull` reported
 errors (e.g. "not a member of this channel"), mention them after the summary —
 don't retry.
 
+### 5. Offer an update (after reporting results)
+
+    python3 ~/.tgjobs/jobs/update.py check
+
+Throttled (at most once a day) and never blocks. If it prints
+`"update_available": true`, tell the user a newer version is available (show
+`local` → `remote`) and **ask** whether to update now. If they agree, run:
+
+    curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash -s -- --update
+
+which updates the backend and every agent this skill is installed in — all at
+once — keeping all state. If the check fails or `update_available` is `false`,
+say nothing about updates.
+
 ## Behavior notes
 
 - **Idempotent & cursor-based.** Each channel resumes from its last message id;

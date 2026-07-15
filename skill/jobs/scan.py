@@ -280,7 +280,10 @@ def cmd_save_classifications(args: argparse.Namespace) -> int:
         msg_permalink = msg_row["permalink"] if msg_row else None
         msg_date = msg_row["msg_date"] if msg_row else None
 
-        for ex in entry.get("extractions", []) or []:
+        exs = entry.get("extractions")
+        if not isinstance(exs, list):
+            exs = []
+        for ex in exs:
             if not ex.get("is_job"):
                 continue
             if not ex.get("is_match"):
