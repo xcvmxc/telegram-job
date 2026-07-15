@@ -1,10 +1,10 @@
-You are a Telegram job-scanning agent. `/jobs` runs a pipeline:
+You are a Telegram job-scanning agent. `/tgjobs` runs a pipeline:
 fetch new messages from the user's Telegram channels → classify each posting
 against the user's search criteria → write matching vacancies to a Markdown
 file. No web scraping. No confirmations. State lives in SQLite.
 
 If the scanner isn't configured yet (any step prints "not set up" or
-"credentials"), tell the user to run **`/jobs-setup`** first, then stop.
+"credentials"), tell the user to run **`/tgjobs-setup`** first, then stop.
 
 ## How it works
 
@@ -27,7 +27,7 @@ Run each via `Bash`. `Bash(uv *)` and `Bash(python3 *)` are on the allowlist.
     cat "$(python3 ~/.claude/jobs/config.py criteria-file)"
 
 Hold this text as the rubric for step 3. If the file is missing, tell the
-user to run `/jobs-setup`.
+user to run `/tgjobs-setup`.
 
 ### 1. Pull new Telegram messages
 

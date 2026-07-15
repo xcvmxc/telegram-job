@@ -3,7 +3,7 @@
 A [Claude Code](https://claude.com/claude-code) skill that scans the Telegram
 channels **you** already follow, keeps only the vacancies that match what
 you're looking for, and writes them to a tidy Markdown file — on demand, with
-one command: `/jobs`.
+one command: `/tgjobs`.
 
 The matching is done by Claude itself, right inside your Claude Code session.
 **There's no AI API key to buy and no server to run** — the only credential you
@@ -14,7 +14,7 @@ need is a free personal Telegram API key.
 ## What it does
 
 ```
-/jobs
+/tgjobs
   → reads your channel list        (Telegram Sources.md)
   → fetches new posts since last run (per-channel cursor, nothing re-fetched)
   → for each posting, Claude decides: is this a real job? does it match you?
@@ -25,7 +25,7 @@ You control two plain-text files:
 
 | File | What it's for |
 |------|---------------|
-| `Search Criteria.md`  | What you're looking for, in plain language. Edit it to change what `/jobs` keeps. |
+| `Search Criteria.md`  | What you're looking for, in plain language. Edit it to change what `/tgjobs` keeps. |
 | `Telegram Sources.md` | Which channels/groups to scan, one per line. |
 
 Both live in a folder you choose (e.g. `~/job-hunt`), so you can read the
@@ -63,7 +63,7 @@ The installer backs up anything it overwrites; your `jobs.db` and `config.json`
 are never touched. Then, in Claude Code:
 
 ```
-/jobs-setup
+/tgjobs-setup
 ```
 
 The wizard walks you through three things:
@@ -84,22 +84,22 @@ The wizard walks you through three things:
    ```bash
    uv run --with telethon python ~/.claude/telegram/tg_scan.py list
    ```
-3. Run **`/jobs`**. Read the `matches+...md` file it writes.
+3. Run **`/tgjobs`**. Read the `matches+...md` file it writes.
 
-Run `/jobs` whenever you like — it only ever looks at posts newer than the
+Run `/tgjobs` whenever you like — it only ever looks at posts newer than the
 last run, so repeats are cheap and never duplicate.
 
 ### Changing what you search for
 
-Just edit `Search Criteria.md` and run `/jobs` again. Nothing else — no
+Just edit `Search Criteria.md` and run `/tgjobs` again. Nothing else — no
 re-setup, no commands. Same for sources: edit `Telegram Sources.md`.
 
 ## How it's put together
 
 ```
 ~/.claude/
-  commands/jobs.md          the /jobs pipeline (Claude orchestrates)
-  commands/jobs-setup.md    the setup wizard
+  commands/tgjobs.md          the /tgjobs pipeline (Claude orchestrates)
+  commands/tgjobs-setup.md    the setup wizard
   jobs/
     config.py               resolves your folder + file paths
     db.py                   SQLite schema + URL dedup
@@ -127,7 +127,7 @@ human pace, only channels you're a member of, and use it at your own risk.
 ```bash
 rm -rf ~/.claude/jobs ~/.claude/telegram/tg_scan.py \
        ~/.claude/telegram/credentials.env ~/.claude/telegram/jobscan.session \
-       ~/.claude/commands/jobs.md ~/.claude/commands/jobs-setup.md
+       ~/.claude/commands/tgjobs.md ~/.claude/commands/tgjobs-setup.md
 ```
 
 Your job folder (criteria, sources, results) is left alone — delete it yourself

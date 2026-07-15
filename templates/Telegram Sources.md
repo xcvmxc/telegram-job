@@ -3,7 +3,7 @@
 # Add ONE channel or group per line. Lines starting with "#" are ignored
 # (that's how these instructions stay out of the way). Blank lines are fine.
 #
-# To change which channels are scanned, just edit this list and run /jobs again.
+# To change which channels are scanned, just edit this list and run /tgjobs again.
 #
 # ---------------------------------------------------------------------------
 # ACCEPTED FORMATS

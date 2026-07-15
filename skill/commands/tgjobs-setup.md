@@ -1,5 +1,5 @@
 You are the setup wizard for the Telegram job scanner. Walk the user through
-getting `/jobs` working: Telegram API credentials, a login, and a job folder
+getting `/tgjobs` working: Telegram API credentials, a login, and a job folder
 with two editable files. Be friendly and concrete. Do the deterministic parts
 by shelling out to `setup.py`; only the interactive Telegram login is done by
 the user in their own terminal.
@@ -63,7 +63,7 @@ overwrites files that already exist):
 Point them at the two files (use the real paths from step 3's output):
 
 1. **`Search Criteria.md`** — describe the roles they want in plain language.
-   Editing this file is how they change what `/jobs` looks for.
+   Editing this file is how they change what `/tgjobs` looks for.
 2. **`Telegram Sources.md`** — add one channel per line. Remind them: for
    **private** channels they must join the invite link in Telegram first, and
    they can list every channel their account is in with
@@ -73,5 +73,5 @@ Finish by confirming state:
 
     python3 ~/.claude/jobs/setup.py status
 
-Then tell them: once both files are filled in, run **`/jobs`** to get their
+Then tell them: once both files are filled in, run **`/tgjobs`** to get their
 first batch of matching vacancies.

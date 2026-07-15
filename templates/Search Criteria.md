@@ -4,7 +4,7 @@ Edit this file to tell the scanner which vacancies count as a match.
 Write in plain language — the AI reads this file on every run and keeps only
 the postings that fit. The more specific you are, the fewer irrelevant hits.
 
-**To change what you search for, just edit this file and run `/jobs` again.**
+**To change what you search for, just edit this file and run `/tgjobs` again.**
 No commands, no re-setup.
 
 Delete the examples below and describe your own search.

@@ -33,7 +33,7 @@ CRITERIA_FILENAME = "Search Criteria.md"
 _MISSING = (
     "Job scanner is not set up yet.\n"
     f"  No config at {CONFIG_PATH}.\n"
-    "  Run /jobs-setup in Claude Code to configure it."
+    "  Run /tgjobs-setup in Claude Code to configure it."
 )
 
 
@@ -47,11 +47,11 @@ def load() -> dict:
         print(f"Config at {CONFIG_PATH} is not valid JSON: {exc}", file=sys.stderr)
         sys.exit(2)
     if not isinstance(data, dict):
-        print(f"Config at {CONFIG_PATH} must be a JSON object. Run /jobs-setup.", file=sys.stderr)
+        print(f"Config at {CONFIG_PATH} must be a JSON object. Run /tgjobs-setup.", file=sys.stderr)
         sys.exit(2)
     folder = (data.get("folder") or "").strip()
     if not folder:
-        print(f"Config at {CONFIG_PATH} has no \"folder\". Run /jobs-setup.", file=sys.stderr)
+        print(f"Config at {CONFIG_PATH} has no \"folder\". Run /tgjobs-setup.", file=sys.stderr)
         sys.exit(2)
     data["folder"] = pathlib.Path(folder).expanduser()
     return data
@@ -70,7 +70,7 @@ def criteria_file() -> pathlib.Path:
 
 
 def _main() -> int:
-    """Tiny CLI so the /jobs command can resolve paths:
+    """Tiny CLI so the /tgjobs command can resolve paths:
 
         python3 config.py folder
         python3 config.py sources-file
