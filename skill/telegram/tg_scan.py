@@ -59,16 +59,16 @@ def load_creds() -> tuple[int, str]:
                 api_hash = value
     if not api_id or not api_hash:
         eprint(
-            "Missing Telegram credentials.\n"
-            f"  Put TG_API_ID and TG_API_HASH in {CREDS_FILE}\n"
-            "  (get them from https://my.telegram.org -> API development tools),\n"
-            "  or export them as environment variables."
+            "Нет учётных данных Telegram.\n"
+            f"  Укажите TG_API_ID и TG_API_HASH в {CREDS_FILE}\n"
+            "  (получить их можно на https://my.telegram.org -> API development tools),\n"
+            "  либо задайте их как переменные окружения."
         )
         sys.exit(2)
     try:
         return int(api_id), api_hash
     except ValueError:
-        eprint(f"TG_API_ID must be an integer, got: {api_id!r}")
+        eprint(f"TG_API_ID должен быть целым числом, получено: {api_id!r}")
         sys.exit(2)
 
 
@@ -161,7 +161,7 @@ def cmd_login(_args: argparse.Namespace) -> int:
     with make_client() as client:
         me = client.get_me()
         name = getattr(me, "username", None) or getattr(me, "first_name", "?")
-        eprint(f"Logged in as @{name}. Session saved at {SESSION}.session")
+        eprint(f"Вход выполнен как @{name}. Сессия сохранена в {SESSION}.session")
     return 0
 
 
@@ -225,7 +225,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 errors.append({"channel": ref, "error": f"{type(exc).__name__}: {exc}"})
                 continue
             if entity is None:
-                errors.append({"channel": ref, "error": "not found in your dialogs — are you a member of this channel?"})
+                errors.append({"channel": ref, "error": "канал не найден среди ваших диалогов — вы состоите в нём?"})
                 continue
             count = 0
             iter_kwargs = {"limit": args.limit}
@@ -264,7 +264,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
                     }
                 )
                 count += 1
-            eprint(f"  {ref}: {count} messages")
+            eprint(f"  {ref}: {count} сообщений")
 
     json.dump(
         {"messages": results, "errors": errors},

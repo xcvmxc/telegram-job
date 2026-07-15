@@ -10,7 +10,7 @@ and receives the output:
 
     <folder>/Search Criteria.md    what to look for (read by the classifier)
     <folder>/Telegram Sources.md   channels/groups to scan
-    <folder>/matches+<stamp>.md    output written by `emit-files`
+    <folder>/вакансии+<stamp>.md    output written by `emit-files`
 
 For testing / power users, JOBS_CONFIG overrides the config path.
 
@@ -31,9 +31,9 @@ SOURCES_FILENAME = "Telegram Sources.md"
 CRITERIA_FILENAME = "Search Criteria.md"
 
 _MISSING = (
-    "Job scanner is not set up yet.\n"
-    f"  No config at {CONFIG_PATH}.\n"
-    "  Run /tgjobs-setup in Claude Code to configure it."
+    "Сканер вакансий ещё не настроен.\n"
+    f"  Нет конфига в {CONFIG_PATH}.\n"
+    "  Запустите /tgjobs-setup в Claude Code, чтобы настроить."
 )
 
 
@@ -44,14 +44,14 @@ def load() -> dict:
     try:
         data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        print(f"Config at {CONFIG_PATH} is not valid JSON: {exc}", file=sys.stderr)
+        print(f"Конфиг {CONFIG_PATH} — некорректный JSON: {exc}", file=sys.stderr)
         sys.exit(2)
     if not isinstance(data, dict):
-        print(f"Config at {CONFIG_PATH} must be a JSON object. Run /tgjobs-setup.", file=sys.stderr)
+        print(f"Конфиг {CONFIG_PATH} должен быть JSON-объектом. Запустите /tgjobs-setup.", file=sys.stderr)
         sys.exit(2)
     folder = (data.get("folder") or "").strip()
     if not folder:
-        print(f"Config at {CONFIG_PATH} has no \"folder\". Run /tgjobs-setup.", file=sys.stderr)
+        print(f"В конфиге {CONFIG_PATH} нет \"folder\". Запустите /tgjobs-setup.", file=sys.stderr)
         sys.exit(2)
     data["folder"] = pathlib.Path(folder).expanduser()
     return data

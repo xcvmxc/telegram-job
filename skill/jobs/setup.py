@@ -46,10 +46,10 @@ def cmd_save_creds(args: argparse.Namespace) -> int:
     api_id = (args.api_id or "").strip()
     api_hash = (args.api_hash or "").strip()
     if not api_id.isdigit():
-        print(f"TG_API_ID must be a number, got: {api_id!r}", file=sys.stderr)
+        print(f"TG_API_ID должен быть числом, получено: {api_id!r}", file=sys.stderr)
         return 2
     if len(api_hash) < 16:
-        print("TG_API_HASH looks too short — copy the full hash from my.telegram.org.",
+        print("TG_API_HASH слишком короткий — скопируйте полный hash с my.telegram.org.",
               file=sys.stderr)
         return 2
     TG_DIR.mkdir(parents=True, exist_ok=True)
@@ -83,7 +83,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             continue
         src = TEMPLATES_DIR / filename
         if not src.exists():
-            print(f"template missing: {src}", file=sys.stderr)
+            print(f"файл шаблона не найден: {src}", file=sys.stderr)
             return 2
         shutil.copyfile(src, dest)
         scaffolded.append(str(dest))

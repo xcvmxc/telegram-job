@@ -1,39 +1,39 @@
-# Telegram sources to scan
+# Источники Telegram для сканирования
 #
-# Add ONE channel or group per line. Lines starting with "#" are ignored
-# (that's how these instructions stay out of the way). Blank lines are fine.
+# Добавляйте ПО ОДНОМУ каналу или группе в строке. Строки, начинающиеся с "#",
+# игнорируются (так эта инструкция не мешает). Пустые строки допустимы.
 #
-# To change which channels are scanned, just edit this list and run /tgjobs again.
-#
-# ---------------------------------------------------------------------------
-# ACCEPTED FORMATS
-# ---------------------------------------------------------------------------
-#   @channelname                 public channel or group (username)
-#   https://t.me/channelname     public link — same as @channelname
-#   https://t.me/+AbC123xyz      PRIVATE invite link (join it first, see below)
-#   -1001234567890               numeric id (private channel with no username)
+# Чтобы изменить набор каналов, просто отредактируйте список и снова запустите /tgjobs.
 #
 # ---------------------------------------------------------------------------
-# IMPORTANT: you must be a MEMBER of every channel/group you list
+# ДОПУСТИМЫЕ ФОРМАТЫ
 # ---------------------------------------------------------------------------
-# The scanner reads channels through YOUR Telegram account — the same way you
-# read them in the app. So for each source:
+#   @channelname                 публичный канал или группа (username)
+#   https://t.me/channelname     публичная ссылка — то же, что @channelname
+#   https://t.me/+AbC123xyz      ПРИВАТНАЯ инвайт-ссылка (сначала вступите, см. ниже)
+#   -1001234567890               числовой id (приватный канал без username)
 #
-#   * Public channel  -> just add its @handle below.
-#   * Private channel -> open its invite link in Telegram and JOIN it first,
-#                        then add the invite link (or its numeric id) below.
+# ---------------------------------------------------------------------------
+# ВАЖНО: вы должны СОСТОЯТЬ в каждом канале/группе из списка
+# ---------------------------------------------------------------------------
+# Сканер читает каналы через ВАШ аккаунт Telegram — так же, как вы читаете их в
+# приложении. Поэтому для каждого источника:
 #
-# To see every channel/group your account is in — with a ready-to-paste value
-# for each — run this in your terminal:
+#   * Публичный канал  -> просто добавьте его @handle ниже.
+#   * Приватный канал  -> сначала откройте инвайт-ссылку в Telegram и ВСТУПИТЕ,
+#                         затем добавьте ссылку (или её числовой id) ниже.
+#
+# Посмотреть все каналы/группы, в которых состоит ваш аккаунт — с готовым к
+# вставке значением для каждого — можно так:
 #
 #   uv run --with telethon python ~/.claude/telegram/tg_scan.py list
 #
 # ---------------------------------------------------------------------------
-# EXAMPLES (these are placeholders — delete them and add your real channels)
+# ПРИМЕРЫ (это заглушки — удалите их и добавьте свои реальные каналы)
 # ---------------------------------------------------------------------------
 # @example_jobs_channel
 # https://t.me/another_public_jobs_channel
 # https://t.me/+ExamplePrivateInviteHash
 # -1001234567890
 
-# ↓↓↓  add your channels below this line  ↓↓↓
+# ↓↓↓  добавляйте свои каналы ниже этой строки  ↓↓↓

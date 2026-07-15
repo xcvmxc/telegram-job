@@ -1,35 +1,35 @@
-# What jobs am I looking for?
+# Какие вакансии я ищу?
 
-Edit this file to tell the scanner which vacancies count as a match.
-Write in plain language — the AI reads this file on every run and keeps only
-the postings that fit. The more specific you are, the fewer irrelevant hits.
+Отредактируйте этот файл, чтобы задать, какие вакансии считаются подходящими.
+Пишите простыми словами — ИИ читает этот файл при каждом запуске и оставляет
+только подходящие посты. Чем конкретнее, тем меньше лишнего.
 
-**To change what you search for, just edit this file and run `/tgjobs` again.**
-No commands, no re-setup.
+**Чтобы поменять, что вы ищете, просто отредактируйте этот файл и снова
+запустите `/tgjobs`.** Никаких команд и повторной настройки.
 
-Delete the examples below and describe your own search.
+Удалите примеры ниже и опишите свой запрос.
 
 ---
 
-## I'm looking for
+## Что я ищу
 
-- **Roles / titles:** e.g. Product Manager, Senior Product Manager, Product Owner
-- **Seniority:** e.g. mid to senior (no junior, no internships)
+- **Роли / должности:** напр. Product Manager, Senior Product Manager, Product Owner
+- **Уровень:** напр. middle–senior (без junior и стажировок)
 
-## Must have
+## Обязательно
 
-- e.g. A product role (not project/program management)
-- e.g. An individual-contributor or lead position
+- напр. продуктовая роль (не проектный/программный менеджмент)
+- напр. позиция individual-contributor или lead
 
-## Skip these (not a match)
+## Пропускать (не подходит)
 
-- e.g. Pure sales, account management, or support roles
-- e.g. Agencies / outsourcing shops
-- e.g. Unpaid or equity-only positions
+- напр. чистые продажи, аккаунт-менеджмент, поддержка
+- напр. агентства / аутсорс-конторы
+- напр. без оплаты или только за долю
 
-## Notes
+## Заметки
 
-Anything else that helps the AI decide. Example:
+Всё, что поможет ИИ решить. Пример:
 
-> I want individual-contributor and lead **product** roles, mid-to-senior.
-> Skip project managers, scrum masters, and delivery/program roles.
+> Ищу продуктовые роли уровня individual-contributor и lead, middle–senior.
+> Пропускать проектных менеджеров, скрам-мастеров и delivery/program-роли.

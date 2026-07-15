@@ -1,56 +1,56 @@
 # Telegram Job Scanner
 
-A [Claude Code](https://claude.com/claude-code) skill that scans the Telegram
-channels **you** already follow, keeps only the vacancies that match what
-you're looking for, and writes them to a tidy Markdown file — on demand, with
-one command: `/tgjobs`.
+Скилл для [Claude Code](https://claude.com/claude-code), который просматривает
+Telegram-каналы, на которые **вы уже подписаны**, оставляет только вакансии,
+подходящие под ваш запрос, и складывает их в аккуратный Markdown-файл — по
+одной команде: `/tgjobs`.
 
-The matching is done by Claude itself, right inside your Claude Code session.
-**There's no AI API key to buy and no server to run** — the only credential you
-need is a free personal Telegram API key.
+Отбор делает сам Claude, прямо внутри вашей сессии Claude Code.
+**Не нужен ни платный AI-ключ, ни сервер** — единственное, что потребуется, это
+бесплатный личный API-ключ Telegram.
 
 ---
 
-## What it does
+## Что он делает
 
 ```
 /tgjobs
-  → reads your channel list        (Telegram Sources.md)
-  → fetches new posts since last run (per-channel cursor, nothing re-fetched)
-  → for each posting, Claude decides: is this a real job? does it match you?
-  → writes the matches               (matches+2026-07-13_1430.md)
+  → читает список каналов          (Telegram Sources.md)
+  → тянет новые посты с прошлого запуска (курсор на канал, лишнего не качает)
+  → по каждому посту Claude решает: это реальная вакансия? подходит вам?
+  → сохраняет подходящие            (вакансии+2026-07-13_1430.md)
 ```
 
-You control two plain-text files:
+Вы управляете двумя обычными текстовыми файлами:
 
-| File | What it's for |
-|------|---------------|
-| `Search Criteria.md`  | What you're looking for, in plain language. Edit it to change what `/tgjobs` keeps. |
-| `Telegram Sources.md` | Which channels/groups to scan, one per line. |
+| Файл | Для чего |
+|------|----------|
+| `Search Criteria.md`  | Что вы ищете, простыми словами. Отредактируйте — и `/tgjobs` начнёт отбирать по-новому. |
+| `Telegram Sources.md` | Какие каналы/группы сканировать, по одному в строке. |
 
-Both live in a folder you choose (e.g. `~/job-hunt`), so you can read the
-results in any editor, Obsidian, Finder — whatever.
+Оба лежат в папке, которую вы выбираете сами (например, `~/job-hunt`), так что
+результаты можно открыть в любом редакторе, Obsidian, Finder — где угодно.
 
-## Requirements
+## Что нужно
 
-- **Claude Code** (this is a skill for it).
-- **[uv](https://astral.sh/uv)** — runs the Telegram library in an isolated
-  env, no system Python installs. Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- A **Telegram account** that is a member of the channels you want to scan.
+- **Claude Code** (это скилл для него).
+- **[uv](https://astral.sh/uv)** — запускает библиотеку Telegram в изолированном
+  окружении, без установки в систему. Установка: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **Аккаунт Telegram**, состоящий в каналах, которые вы хотите сканировать.
 
-## Install
+## Установка
 
-**The easy way — one command, no cloning, nothing to build.** Paste this into
-your terminal:
+**Простой способ — одна команда, без клонирования и сборки.** Вставьте в
+терминал:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash
 ```
 
-It downloads the skill and copies it into `~/.claude/`.
+Скрипт скачает скилл и скопирует его в `~/.claude/`.
 
 <details>
-<summary>Prefer to clone the repo instead?</summary>
+<summary>Предпочитаете клонировать репозиторий?</summary>
 
 ```bash
 git clone https://github.com/xcvmxc/telegram-job.git
@@ -59,70 +59,73 @@ cd telegram-job
 ```
 </details>
 
-The installer backs up anything it overwrites; your `jobs.db` and `config.json`
-are never touched. Then, in Claude Code:
+Установщик делает резервную копию всего, что перезаписывает; ваши `jobs.db` и
+`config.json` он не трогает. Затем в Claude Code:
 
 ```
 /tgjobs-setup
 ```
 
-The wizard walks you through three things:
+Мастер проведёт вас через три шага:
 
-1. **Telegram API key** — create one for free at
+1. **API-ключ Telegram** — создаётся бесплатно на
    [my.telegram.org](https://my.telegram.org) → *API development tools*
-   (takes ~1 minute). You paste the `api_id` and `api_hash`.
-2. **Log in** — a one-time Telegram login (you type the code it texts you).
-3. **Job folder** — pick where your files and results live; the wizard drops
-   `Search Criteria.md` and `Telegram Sources.md` there for you to edit.
+   (займёт ~1 минуту). Вы вставляете `api_id` и `api_hash`.
+2. **Вход** — разовый вход в Telegram (введёте код, который придёт в приложение).
+3. **Папка для работы** — выберите, где хранить файлы и результаты; мастер
+   положит туда `Search Criteria.md` и `Telegram Sources.md` для редактирования.
 
-## Use it
+## Как пользоваться
 
-1. Edit **`Search Criteria.md`** — describe the roles you want.
-2. Edit **`Telegram Sources.md`** — add your channels (one per line). For
-   **private** channels, join the invite link in Telegram first, then add it.
-   List every channel your account is in with:
+1. Отредактируйте **`Search Criteria.md`** — опишите нужные роли.
+2. Отредактируйте **`Telegram Sources.md`** — добавьте свои каналы (по одному в
+   строке). Для **приватных** каналов сначала вступите по инвайт-ссылке в
+   Telegram, потом добавьте её. Посмотреть все каналы, в которых состоит ваш
+   аккаунт:
    ```bash
    uv run --with telethon python ~/.claude/telegram/tg_scan.py list
    ```
-3. Run **`/tgjobs`**. Read the `matches+...md` file it writes.
+3. Запустите **`/tgjobs`**. Откройте файл `вакансии+...md`, который он создаст.
 
-Run `/tgjobs` whenever you like — it only ever looks at posts newer than the
-last run, so repeats are cheap and never duplicate.
+Запускайте `/tgjobs` когда угодно — он всегда смотрит только посты новее
+прошлого запуска, поэтому повторы дешёвые и без дубликатов.
 
-### Changing what you search for
+### Как поменять, что искать
 
-Just edit `Search Criteria.md` and run `/tgjobs` again. Nothing else — no
-re-setup, no commands. Same for sources: edit `Telegram Sources.md`.
+Просто отредактируйте `Search Criteria.md` и снова запустите `/tgjobs`. Больше
+ничего — ни повторной настройки, ни команд. То же с источниками: правьте
+`Telegram Sources.md`.
 
-## How it's put together
+## Из чего это собрано
 
 ```
 ~/.claude/
-  commands/tgjobs.md          the /tgjobs pipeline (Claude orchestrates)
-  commands/tgjobs-setup.md    the setup wizard
+  commands/tgjobs.md          конвейер /tgjobs (оркеструет Claude)
+  commands/tgjobs-setup.md    мастер настройки
   jobs/
-    config.py               resolves your folder + file paths
-    db.py                   SQLite schema + URL dedup
+    config.py               резолвит путь к папке и файлам
+    db.py                   схема SQLite + дедуп ссылок
     scan.py                 pull / unclassified / save / emit
-    setup.py                setup helpers (check / save-creds / init / status)
-    jobs.db                 state (cursors, seen posts, matched jobs)
+    setup.py                хелперы настройки (check / save-creds / init / status)
+    jobs.db                 состояние (курсоры, виденные посты, найденные вакансии)
     config.json             { "folder": "..." }
-    templates/              the two files scaffolded into your folder
+    templates/              два файла, которые кладутся в вашу папку
   telegram/
-    tg_scan.py              Telethon fetcher (raw messages → JSON)
-    credentials.env         your TG_API_ID / TG_API_HASH
-    jobscan.session         your Telegram login session
+    tg_scan.py              фетчер на Telethon (сырые сообщения → JSON)
+    credentials.env         ваши TG_API_ID / TG_API_HASH
+    jobscan.session         ваша сессия входа в Telegram
 ```
 
-## A note on Telegram's terms
+## Про правила Telegram
 
-This tool reads channels through your own user account (via
-[Telethon](https://docs.telethon.dev/)), the same content you can already see
-in the app. Automating a user account is a grey area under Telegram's Terms of
-Service and, used aggressively, can get an account limited or banned. Scan at a
-human pace, only channels you're a member of, and use it at your own risk.
+Инструмент читает каналы через ваш собственный аккаунт (через
+[Telethon](https://docs.telethon.dev/)) — тот же контент, что вы и так видите в
+приложении. Автоматизация пользовательского аккаунта — «серая зона» по правилам
+Telegram, и при агрессивном использовании аккаунт могут ограничить или
+заблокировать. Сканируйте в человеческом темпе, только каналы, где вы состоите,
+и на свой риск.
 
-## Uninstall
+## Удаление
 
 ```bash
 rm -rf ~/.claude/jobs ~/.claude/telegram/tg_scan.py \
@@ -130,9 +133,9 @@ rm -rf ~/.claude/jobs ~/.claude/telegram/tg_scan.py \
        ~/.claude/commands/tgjobs.md ~/.claude/commands/tgjobs-setup.md
 ```
 
-Your job folder (criteria, sources, results) is left alone — delete it yourself
-if you want.
+Вашу рабочую папку (критерии, источники, результаты) скрипт не трогает — удалите
+её сами, если нужно.
 
-## License
+## Лицензия
 
-[MIT](LICENSE) — use it, fork it, ship it.
+[MIT](LICENSE) — используйте, форкайте, распространяйте.
