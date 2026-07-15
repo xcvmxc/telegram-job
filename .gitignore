@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Conductor workspace scratch
+.context/
+
+# Runtime state & secrets — these are created on the user's machine by
+# /jobs-setup and must never be committed to the product repo.
+jobs.db
+config.json
+credentials.env
+*.session
+*.session-journal
