@@ -121,6 +121,22 @@ detect() { # detect NAME  -> echo "yes"/"no"
 D_claude=$(detect claude); D_codex=$(detect codex); D_gemini=$(detect gemini); D_cursor=$(detect cursor)
 
 # --- choose language -----------------------------------------------------
+# Language is chosen ONCE at install and is the single source of truth for both
+# the interface and the exported files. A re-run (e.g. to add an agent) inherits
+# it from installed.json — mirroring how agents accumulate — unless --lang is
+# given, so re-running never silently resets a ru install back to en.
+if [ -z "$LANG_CHOICE" ] && [ -f "$TGJOBS_HOME/installed.json" ]; then
+  LANG_CHOICE="$(python3 - "$TGJOBS_HOME/installed.json" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1])); l = d.get("lang") if isinstance(d, dict) else None
+except Exception:
+    l = None
+print(l if l in ("en", "ru") else "")
+PY
+)"
+  [ -n "$LANG_CHOICE" ] && say "Language: ${LANG_CHOICE} (from previous install; pass --lang to change)"
+fi
 if [ -z "$LANG_CHOICE" ] && [ "$ASSUME_YES" -eq 0 ]; then
   head "Language / Язык"
   say "1) English   2) Русский"
