@@ -49,7 +49,7 @@
 затем поставит:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash
 ```
 
 Хотите без вопросов? Передайте флаги (повторный запуск в любой момент добавляет
@@ -63,7 +63,7 @@ curl -fsSL .../install.sh | bash -s -- --lang ru --agent claude,codex
 <details><summary>Из клона</summary>
 
 ```bash
-git clone https://github.com/xcvmxc/telegram-job.git && cd telegram-job
+git clone https://github.com/xcvmxc/telegram-intent.git && cd telegram-intent
 ./install.sh                 # интерактивно
 ./install.sh --lang ru --agent all
 ```
@@ -126,7 +126,7 @@ Code / Gemini / Cursor, а для **Codex** спрашивает, прежде �
 состояние. Можно обновить и вручную:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash -s -- --update
+curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash -s -- --update
 ```
 
 ## Из чего это собрано

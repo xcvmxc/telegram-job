@@ -132,7 +132,7 @@ Throttled (at most once a day) and never blocks. If it prints
 `"update_available": true`, tell the user a newer version is available (show
 `local` → `remote`) and **ask** whether to update now. If they agree, run:
 
-    curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash -s -- --update
+    curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash -s -- --update
 
 which updates the backend and every agent this skill is installed in — all at
 once — keeping all state. If the check fails or `update_available` is `false`,
