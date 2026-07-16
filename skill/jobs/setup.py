@@ -10,8 +10,9 @@ Subcommands:
                              write $TGJOBS_HOME/telegram/credentials.env
     init --folder PATH [--lang en|ru]
                              write config.json and scaffold the two editable
-                             files (in the chosen language) into PATH
-                             (never clobbers existing edits)
+                             files into PATH (never clobbers existing edits).
+                             --lang defaults to the language chosen at install
+                             (installed.json), so there's no second choice.
     status                   print current config + DB counts (JSON)
 
 Stdlib only.
@@ -67,10 +68,23 @@ def cmd_save_creds(args: argparse.Namespace) -> int:
     return 0
 
 
+def _installed_lang() -> "str | None":
+    """The language chosen at install time (from installed.json). The install
+    choice is the single source of truth for BOTH the interface (which adapter
+    files were installed) and the export language — so the wizard never asks
+    again."""
+    try:
+        data = json.loads((config.TGJOBS_HOME / "installed.json").read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    lang = data.get("lang") if isinstance(data, dict) else None
+    return lang if lang in ("en", "ru") else None
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     folder = pathlib.Path(args.folder).expanduser()
     folder.mkdir(parents=True, exist_ok=True)
-    lang = (args.lang or config.DEFAULT_LANG).strip().lower()
+    lang = (args.lang or _installed_lang() or config.DEFAULT_LANG).strip().lower()
     if lang not in ("en", "ru"):
         lang = config.DEFAULT_LANG
 
@@ -140,7 +154,8 @@ def main() -> int:
 
     p_init = sub.add_parser("init", help="Write config.json and scaffold editable files.")
     p_init.add_argument("--folder", required=True)
-    p_init.add_argument("--lang", default=config.DEFAULT_LANG, choices=["en", "ru"])
+    p_init.add_argument("--lang", default=None, choices=["en", "ru"],
+                        help="Defaults to the install-time language (installed.json).")
 
     sub.add_parser("status", help="Print current config + DB counts.")
 
