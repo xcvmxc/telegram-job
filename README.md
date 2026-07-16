@@ -102,6 +102,12 @@ from another channel. Tune the window with `"export_dedup_days"` in
 `config.json` (default `3`, `0` disables). Exact-link duplicates are always
 dropped regardless.
 
+**Links and posts:** `/tgjobs` matches on both apply links **and** whole text
+posts — a job post with no link is surfaced as the post itself (with a short
+excerpt). **Housekeeping:** stored messages and matches older than **2 days**
+are pruned at the start of each scan (tune with `"retention_days"` in
+`config.json`; it also caps the dedup window above).
+
 ## Language
 
 Choose English or Russian at install. It sets the conversation language, the

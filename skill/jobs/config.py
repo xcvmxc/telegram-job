@@ -72,6 +72,12 @@ def load() -> dict:
         data["export_dedup_days"] = max(0, int(data.get("export_dedup_days", 3)))
     except (TypeError, ValueError):
         data["export_dedup_days"] = 3
+    # How many days of messages + matched jobs to keep; older rows are pruned
+    # at the start of each pull. Channel cursors are never pruned.
+    try:
+        data["retention_days"] = max(1, int(data.get("retention_days", 2)))
+    except (TypeError, ValueError):
+        data["retention_days"] = 2
     return data
 
 

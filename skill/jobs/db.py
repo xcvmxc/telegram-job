@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     msg_permalink TEXT,
     msg_date      TEXT,
     channel_ref   TEXT,
+    excerpt       TEXT,
     extracted_at  TEXT NOT NULL
 );
 
@@ -77,6 +78,10 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.executescript(_SCHEMA)
+    # Lightweight migration for DBs created before `excerpt` existed.
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(jobs)")}
+    if "excerpt" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN excerpt TEXT")
     conn.commit()
     return conn
 

@@ -36,8 +36,8 @@ user to run `/tgjobs-setup`.
     python3 ~/.tgjobs/jobs/scan.py pull
 
 Iterates every channel in `Telegram Sources.md`, resumes each from its cursor
-(or the last 3 days on a channel's first scan), stores any message that has a
-URL, and prints a JSON summary.
+(or the last 3 days on a channel's first scan), stores each post that has a URL
+or text, and prints a JSON summary. It also prunes anything older than 2 days.
 
 **Capture `run_start` from the summary** — you pass it to `emit-files` at the
 end so the output contains only jobs from this run.
@@ -79,6 +79,12 @@ empty string if unknown).
 If a post lists several roles each with its own link, emit one entry per role.
 If none of the URLs are real vacancies, return `extractions: []` — the message
 is still marked processed so it isn't re-checked.
+
+**A matching post with no apply link is still a result** — set `link` to the
+message `permalink` and add a one-line `excerpt` (a short quote from the post);
+take position/company from the text. For posts with an apply link, `link` is
+that URL and `excerpt` can be omitted. Follow the criteria's guidance on what
+counts as a match.
 
 Reply with one array and save it:
 
