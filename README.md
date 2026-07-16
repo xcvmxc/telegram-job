@@ -68,9 +68,11 @@ git clone https://github.com/xcvmxc/telegram-job.git && cd telegram-job
 </details>
 
 The installer never touches your state (`~/.tgjobs/jobs/jobs.db`) or config, and
-backs up any agent config it merges into. **Codex** needs one manual line in
-`~/.codex/config.toml` (the installer prints it) so `/tgjobs` may reach the
-network and write outside the project — this is Codex's sandbox, by design.
+backs up any agent config it merges into. It also sets each agent up to run the
+pipeline **without prompting** — an allow-list for Claude Code / Gemini / Cursor,
+and for **Codex** it asks first before writing the sandbox + `approval_policy =
+never` into `~/.codex/config.toml` (that also lets `/tgjobs` reach the network
+and write outside the project — Codex's sandbox, by design).
 
 Then, in your agent, run **`/tgjobs-setup`** — a wizard that walks you through:
 
