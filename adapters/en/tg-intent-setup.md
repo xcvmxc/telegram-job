@@ -52,7 +52,10 @@ success it prints "Logged in as ...". Ask them to confirm before continuing.
 Ask where they want their job files and output to live. Suggest a default like
 `~/job-hunt`. Then:
 
-    python3 ~/.tgjobs/jobs/setup.py init --folder "<PATH>" --lang en
+    python3 ~/.tgjobs/jobs/setup.py init --folder "<PATH>"
+
+The language was already chosen at install — it drives both this dialog and the
+export files, so **don't ask for it again**; `init` picks it up automatically.
 
 This writes `config.json` and drops two files into the folder (it never
 overwrites files that already exist):

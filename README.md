@@ -30,7 +30,7 @@ You control two plain-text files (in your chosen language):
 | File | What it's for |
 |------|---------------|
 | `Search Criteria.md`  | What you're looking for, in plain language. Define one or more **intents** (separate searches) — each gets its own export file. |
-| `Telegram Sources.md` | Which channels/groups to scan, one per line. |
+| `Telegram Sources.md` | Which channels/groups to scan, one per line, under an **Active** / **Inactive** section so you can park a channel without deleting it. |
 
 The scanner's backend lives in a shared, agent-neutral home (`~/.tgjobs`), so
 every agent you install it into uses the same channels, criteria and history.
@@ -87,9 +87,10 @@ Then, in your agent, run **`/tg-intent-setup`** — a wizard that walks you thro
    several **intents** (`## Intent: <name>` blocks) if you're running more than
    one search; each intent writes its own file. Leave the headers out for a
    single default search.
-2. Edit **`Telegram Sources.md`** — add your channels (one per line). For
-   **private** channels, join the invite link first, then add it. List every
-   channel your account is in with:
+2. Edit **`Telegram Sources.md`** — add your channels (one per line) under the
+   **`## Active`** section; move any you want to pause down to **`## Inactive`**
+   (kept, not scanned). For **private** channels, join the invite link first,
+   then add it. List every channel your account is in with:
    ```bash
    uv run --with telethon python ~/.tgjobs/telegram/tg_scan.py list
    ```
@@ -117,9 +118,10 @@ are pruned at the start of each scan (tune with `"retention_days"` in
 
 ## Language
 
-Choose English or Russian at install. It sets the conversation language, the
-wording of the two editable files, and the wording of the output file. To switch
-later, re-run the installer with the other `--lang`.
+Choose English or Russian **once, at install**. That single choice sets the
+conversation language, the wording of the two editable files, and the wording of
+the output files — `/tg-intent-setup` never asks again. To switch later, re-run
+the installer with the other `--lang`.
 
 ## Updating
 

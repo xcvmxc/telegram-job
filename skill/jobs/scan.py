@@ -55,26 +55,57 @@ CHANNEL_MSG_LIMIT = 500
 
 # --- Sources file --------------------------------------------------------
 
-def load_sources() -> list[str]:
-    """Read `<folder>/Telegram Sources.md`.
+# A "## Active" / "## Inactive" header (Russian "## Активные" / "## Неактивные")
+# splits the sources file into a scanned section and a parked one. Only a
+# '#'-prefixed line whose text STARTS with the keyword qualifies, so channel
+# refs and ordinary comments are never mistaken for a section header.
+_SRC_HEADER = re.compile(r"^#{1,6}\s*(.+?)\s*$")
 
-    One channel/group reference per line, optionally written as a Markdown
-    bullet ("- @channel", "* @channel"). Lines starting with '#' are comments,
-    blank lines are ignored. Everything else is a source ref: @username,
-    t.me/username, t.me/+invite, or a numeric -100… id.
+
+def _sources_section_kind(line: str) -> "str | None":
+    """Return 'active'/'inactive' if `line` is a section header, else None."""
+    m = _SRC_HEADER.match(line)
+    if not m:
+        return None
+    text = m.group(1).strip().strip(":").strip().casefold()
+    if text.startswith("active") or text.startswith("активн"):
+        return "active"
+    if (text.startswith("inactive") or text.startswith("неактивн")
+            or text.startswith("не активн")):
+        return "inactive"
+    return None
+
+
+def load_sources() -> list[str]:
+    """Read the channel refs to scan from `<folder>/Telegram Sources.md`.
+
+    Refs may be plain lines or Markdown bullets ("- @channel"). Lines starting
+    with '#' are comments; blank lines are ignored. A "## Active" / "## Inactive"
+    header (Russian "## Активные" / "## Неактивные") splits the file: only refs
+    in the Active section are scanned; refs under Inactive are kept but skipped,
+    so a channel can be parked without deleting it. A file with no such headers
+    scans every ref (backward compatible). A numeric -100… id is never mistaken
+    for a bullet.
     """
     path = config.sources_file()
     if not path.exists():
         return []
     refs: list[str] = []
     seen: set[str] = set()
+    active = True  # refs before any header (and header-less files) are scanned
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
+        kind = _sources_section_kind(line)
+        if kind is not None:
+            active = kind == "active"
+            continue
         # Strip a leading bullet marker ("- @x") — but not a numeric id
         # ("-100…"), where the dash is followed by a digit, not whitespace.
         if line[:1] in "-*+•" and line[1:2] in (" ", "\t"):
             line = line[2:].strip()
         if not line or line.startswith("#"):
+            continue
+        if not active:
             continue
         if line not in seen:
             seen.add(line)
