@@ -2,7 +2,7 @@
 """Update check for the Telegram job scanner.
 
 `check` compares the installed VERSION against the latest on the repo's main
-branch — at most once per day, and never blocks the pipeline. The /tgjobs
+branch — at most once per day, and never blocks the pipeline. The /tg-intent
 command runs it at the very end and, if a newer version exists, offers an update.
 
 Applying an update is done by re-running the installer in --update mode

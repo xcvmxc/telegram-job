@@ -4,7 +4,7 @@
 
 A skill for AI coding agents that scans the Telegram channels **you already
 follow**, keeps only the vacancies matching what you're looking for, and writes
-them to a tidy Markdown file — on demand, with one command: `/tgjobs`.
+them to a tidy Markdown file — on demand, with one command: `/tg-intent`.
 
 The matching is done by the agent itself, right inside your session.
 **There's no AI API key to buy and no server to run** — the only credential you
@@ -18,7 +18,7 @@ need is a free personal Telegram API key.
 ## What it does
 
 ```
-/tgjobs
+/tg-intent
   → reads your channel list          (Telegram Sources.md)
   → fetches new posts since last run  (per-channel cursor, nothing re-fetched)
   → for each posting, the agent decides: is this a real job? does it match you?
@@ -29,7 +29,7 @@ You control two plain-text files (in your chosen language):
 
 | File | What it's for |
 |------|---------------|
-| `Search Criteria.md`  | What you're looking for, in plain language. Edit it to change what `/tgjobs` keeps. |
+| `Search Criteria.md`  | What you're looking for, in plain language. Edit it to change what `/tg-intent` keeps. |
 | `Telegram Sources.md` | Which channels/groups to scan, one per line. |
 
 The scanner's backend lives in a shared, agent-neutral home (`~/.tgjobs`), so
@@ -71,10 +71,10 @@ The installer never touches your state (`~/.tgjobs/jobs/jobs.db`) or config, and
 backs up any agent config it merges into. It also sets each agent up to run the
 pipeline **without prompting** — an allow-list for Claude Code / Gemini / Cursor,
 and for **Codex** it asks first before writing the sandbox + `approval_policy =
-never` into `~/.codex/config.toml` (that also lets `/tgjobs` reach the network
+never` into `~/.codex/config.toml` (that also lets `/tg-intent` reach the network
 and write outside the project — Codex's sandbox, by design).
 
-Then, in your agent, run **`/tgjobs-setup`** — a wizard that walks you through:
+Then, in your agent, run **`/tg-intent-setup`** — a wizard that walks you through:
 
 1. **Telegram API key** — free, ~1 min at [my.telegram.org](https://my.telegram.org) → *API development tools*.
 2. **Log in** — a one-time Telegram login.
@@ -90,9 +90,9 @@ Then, in your agent, run **`/tgjobs-setup`** — a wizard that walks you through
    ```bash
    uv run --with telethon python ~/.tgjobs/telegram/tg_scan.py list
    ```
-3. Run **`/tgjobs`**. Read the `matches+...md` file it writes.
+3. Run **`/tg-intent`**. Read the `matches+...md` file it writes.
 
-Run `/tgjobs` whenever you like — it only looks at posts newer than the last
+Run `/tg-intent` whenever you like — it only looks at posts newer than the last
 run, from any agent, so repeats are cheap and never duplicate.
 
 **To change what you search for:** edit `Search Criteria.md`. **Sources:** edit
@@ -104,7 +104,7 @@ from another channel. Tune the window with `"export_dedup_days"` in
 `config.json` (default `2`, `0` disables; capped by `retention_days`).
 Exact-link duplicates are always dropped regardless.
 
-**Links and posts:** `/tgjobs` matches on both apply links **and** whole text
+**Links and posts:** `/tg-intent` matches on both apply links **and** whole text
 posts — a job post with no link is surfaced as the post itself (with a short
 excerpt). **Housekeeping:** stored messages and matches older than **2 days**
 are pruned at the start of each scan (tune with `"retention_days"` in
@@ -118,7 +118,7 @@ later, re-run the installer with the other `--lang`.
 
 ## Updating
 
-`/tgjobs` checks for a newer version at the end of a run (at most once a day) and
+`/tg-intent` checks for a newer version at the end of a run (at most once a day) and
 **offers** to update — you just confirm. One update refreshes the shared backend
 and **every agent** the skill is installed in, at once, keeping all your state.
 You can also update on demand:
@@ -139,10 +139,10 @@ curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install
   telegram/jobscan.session          your Telegram login session
 
 per agent (thin adapter → points at ~/.tgjobs):
-  Claude Code   ~/.claude/commands/tgjobs{,-setup}.md
-  Codex         ~/.agents/skills/tgjobs{,-setup}/SKILL.md (+ ~/.codex/skills/)
-  Gemini CLI    ~/.gemini/commands/tgjobs{,-setup}.toml   (+ settings.json)
-  Cursor        ~/.cursor/skills/tgjobs{,-setup}/SKILL.md (+ permissions.json)
+  Claude Code   ~/.claude/commands/tg-intent{,-setup}.md
+  Codex         ~/.agents/skills/tg-intent{,-setup}/SKILL.md (+ ~/.codex/skills/)
+  Gemini CLI    ~/.gemini/commands/tg-intent{,-setup}.toml   (+ settings.json)
+  Cursor        ~/.cursor/skills/tg-intent{,-setup}/SKILL.md (+ permissions.json)
 ```
 
 ## A note on Telegram's terms
@@ -157,10 +157,10 @@ only channels you're a member of, and use it at your own risk.
 
 ```bash
 rm -rf ~/.tgjobs \
-       ~/.claude/commands/tgjobs*.md \
-       ~/.agents/skills/tgjobs* ~/.codex/skills/tgjobs* \
-       ~/.gemini/commands/tgjobs*.toml \
-       ~/.cursor/skills/tgjobs*
+       ~/.claude/commands/tg-intent*.md \
+       ~/.agents/skills/tg-intent* ~/.codex/skills/tg-intent* \
+       ~/.gemini/commands/tg-intent*.toml \
+       ~/.cursor/skills/tg-intent*
 ```
 
 Merged agent configs (`~/.gemini/settings.json`, `~/.cursor/permissions.json`,

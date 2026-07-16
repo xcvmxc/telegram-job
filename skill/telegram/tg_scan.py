@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Telegram channel scanner for the /tgjobs command — a dumb fetcher.
+"""Telegram channel scanner for the /tg-intent command — a dumb fetcher.
 
 It logs in once (interactively) with a Telethon user session, then emits recent
 messages from the requested channels as JSON. It does NOT decide what is a job
-posting — that reasoning lives in the /tgjobs command prompt. This script only
+posting — that reasoning lives in the /tg-intent command prompt. This script only
 fetches raw messages + any links it finds, and builds stable permalinks.
 
 Run it through uv so Telethon is provided in an isolated env (no system installs):
@@ -295,7 +295,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Telegram channel scanner for /tgjobs.")
+    parser = argparse.ArgumentParser(description="Telegram channel scanner for /tg-intent.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("login", help="Interactive one-time login; creates the session file.")

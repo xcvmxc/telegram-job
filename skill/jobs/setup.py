@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Setup helper for the Telegram job scanner.
 
-Called by the /tgjobs-setup wizard so each step is deterministic and testable.
+Called by the /tg-intent-setup wizard so each step is deterministic and testable.
 
 Subcommands:
 

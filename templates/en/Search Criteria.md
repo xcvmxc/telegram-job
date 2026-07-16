@@ -4,7 +4,7 @@ Edit this file to tell the scanner which vacancies count as a match.
 Write in plain language — the AI reads this file on every run and keeps only
 the postings that fit. The more specific you are, the fewer irrelevant hits.
 
-**To change what you search for, just edit this file and run `/tgjobs` again.**
+**To change what you search for, just edit this file and run `/tg-intent` again.**
 No commands, no re-setup.
 
 Delete the examples below and describe your own search.
@@ -36,7 +36,7 @@ Anything else that helps the AI decide. Example:
 
 ## Results
 
-`/tgjobs` matches on **both apply links and whole posts**: if a matching posting
+`/tg-intent` matches on **both apply links and whole posts**: if a matching posting
 has an application link, that link is the result; if a post describes a fitting
 role but has no link, the post itself is the result (with a short excerpt). You
 don't configure that here — the sections above decide *which* roles match.

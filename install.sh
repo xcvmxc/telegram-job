@@ -2,7 +2,7 @@
 #
 # Installer for the Telegram job scanner.
 #
-# Installs a shared, agent-neutral backend into ~/.tgjobs and a thin /tgjobs
+# Installs a shared, agent-neutral backend into ~/.tgjobs and a thin /tg-intent
 # command adapter into each LLM coding agent you choose (Claude Code, Codex,
 # Gemini CLI, Cursor). Interactive by default; re-run any time to add another
 # agent. Your state (~/.tgjobs/jobs/jobs.db) and config are never touched.
@@ -98,7 +98,7 @@ fi
 
 # --- locate product files (local checkout or download) -------------------
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
-if [ -n "${SELF_DIR}" ] && [ -f "${SELF_DIR}/adapters/en/tgjobs.md" ]; then
+if [ -n "${SELF_DIR}" ] && [ -f "${SELF_DIR}/adapters/en/tg-intent.md" ]; then
   ROOT="${SELF_DIR}"
 else
   command -v curl >/dev/null 2>&1 && command -v tar >/dev/null 2>&1 || { say "✗ curl and tar are required."; exit 1; }
@@ -133,7 +133,7 @@ say "Language: ${LANG_CHOICE}"
 # --- choose agents -------------------------------------------------------
 mark() { [ "$1" = yes ] && printf '[detected]' || printf '[not found]'; }
 if [ -z "$AGENTS" ] && [ "$ASSUME_YES" -eq 0 ]; then
-  head "Which agents should get /tgjobs?"
+  head "Which agents should get /tg-intent?"
   say "1) Claude Code  $(mark "$D_claude")"
   say "2) Codex        $(mark "$D_codex")"
   say "3) Gemini CLI   $(mark "$D_gemini")"
@@ -191,11 +191,11 @@ fi
 BODY="$ROOT/adapters/$LANG_CHOICE"
 # localized skill descriptions
 if [ "$LANG_CHOICE" = ru ]; then
-  DESC_JOBS="Просканировать Telegram-каналы пользователя на новые вакансии по его критериям и записать подходящие в Markdown. Триггеры: /tgjobs, «проверь вакансии»."
-  DESC_SETUP="Настроить сканер вакансий Telegram: API-ключ, вход, рабочая папка. Триггер: /tgjobs-setup."
+  DESC_JOBS="Просканировать Telegram-каналы пользователя на новые вакансии по его критериям и записать подходящие в Markdown. Триггеры: /tg-intent, «проверь вакансии»."
+  DESC_SETUP="Настроить сканер вакансий Telegram: API-ключ, вход, рабочая папка. Триггер: /tg-intent-setup."
 else
-  DESC_JOBS="Scan the user's Telegram channels for new job posts matching their Search Criteria and write matches to a Markdown file. Trigger on /tgjobs or 'scan telegram jobs'."
-  DESC_SETUP="Set up the Telegram job scanner: API key, login, job folder. Trigger on /tgjobs-setup."
+  DESC_JOBS="Scan the user's Telegram channels for new job posts matching their Search Criteria and write matches to a Markdown file. Trigger on /tg-intent or 'scan telegram jobs'."
+  DESC_SETUP="Set up the Telegram job scanner: API key, login, job folder. Trigger on /tg-intent-setup."
 fi
 
 write_skill() { # DIR NAME DESC BODYFILE
@@ -214,9 +214,9 @@ write_gemini_toml() { # OUT DESC BODYFILE
 
 install_claude() {
   mkdir -p "$HOME/.claude/commands"
-  cp -f "$BODY/tgjobs.md"       "$HOME/.claude/commands/tgjobs.md"
-  cp -f "$BODY/tgjobs-setup.md" "$HOME/.claude/commands/tgjobs-setup.md"
-  say "Claude Code: /tgjobs + /tgjobs-setup → ~/.claude/commands/"
+  cp -f "$BODY/tg-intent.md"       "$HOME/.claude/commands/tg-intent.md"
+  cp -f "$BODY/tg-intent-setup.md" "$HOME/.claude/commands/tg-intent-setup.md"
+  say "Claude Code: /tg-intent + /tg-intent-setup → ~/.claude/commands/"
   local res
   res="$(python3 - "$HOME/.claude/settings.json" "$TGJOBS_HOME" <<'PY'
 import json, os, sys, pathlib, shutil
@@ -247,9 +247,9 @@ print("merged")
 PY
 )" || res=skip
   if [ "$res" = merged ]; then
-    say "Claude Code: settings.json — /tgjobs commands allow-listed, no prompts (backup .tgjobs.bak)"
+    say "Claude Code: settings.json — /tg-intent commands allow-listed, no prompts (backup .tgjobs.bak)"
   else
-    say "Claude Code: couldn't update ~/.claude/settings.json — /tgjobs may ask for permission (harmless)."
+    say "Claude Code: couldn't update ~/.claude/settings.json — /tg-intent may ask for permission (harmless)."
   fi
 }
 
@@ -293,13 +293,13 @@ PY
 
 install_codex() {
   for base in "$HOME/.agents/skills" "$HOME/.codex/skills"; do
-    write_skill "$base/tgjobs"       tgjobs       "$DESC_JOBS"  "$BODY/tgjobs.md"
-    write_skill "$base/tgjobs-setup" tgjobs-setup "$DESC_SETUP" "$BODY/tgjobs-setup.md"
+    write_skill "$base/tg-intent"       tg-intent       "$DESC_JOBS"  "$BODY/tg-intent.md"
+    write_skill "$base/tg-intent-setup" tg-intent-setup "$DESC_SETUP" "$BODY/tg-intent-setup.md"
   done
   say "Codex: skills → ~/.agents/skills/ (+ ~/.codex/skills/)"
 
   # Codex runs shell in a sandbox that (by default) has no network and can't
-  # write outside the project — but /tgjobs needs both (Telegram API + ~/.tgjobs).
+  # write outside the project — but /tg-intent needs both (Telegram API + ~/.tgjobs).
   local do_write=0 ans=""
   if [ "$ASSUME_YES" -eq 0 ]; then
     say "Codex needs its sandbox widened (enable network + allow writes to ~/.tgjobs)."
@@ -320,9 +320,9 @@ install_codex() {
 }
 
 install_gemini() {
-  write_gemini_toml "$HOME/.gemini/commands/tgjobs.toml"       "$DESC_JOBS"  "$BODY/tgjobs.md"
-  write_gemini_toml "$HOME/.gemini/commands/tgjobs-setup.toml" "$DESC_SETUP" "$BODY/tgjobs-setup.md"
-  say "Gemini: /tgjobs + /tgjobs-setup → ~/.gemini/commands/"
+  write_gemini_toml "$HOME/.gemini/commands/tg-intent.toml"       "$DESC_JOBS"  "$BODY/tg-intent.md"
+  write_gemini_toml "$HOME/.gemini/commands/tg-intent-setup.toml" "$DESC_SETUP" "$BODY/tg-intent-setup.md"
+  say "Gemini: /tg-intent + /tg-intent-setup → ~/.gemini/commands/"
   local res
   res="$(python3 - "$HOME/.gemini/settings.json" "$TGJOBS_HOME" <<'PY'
 import json, sys, pathlib, shutil
@@ -351,8 +351,8 @@ PY
 }
 
 install_cursor() {
-  write_skill "$HOME/.cursor/skills/tgjobs"       tgjobs       "$DESC_JOBS"  "$BODY/tgjobs.md"
-  write_skill "$HOME/.cursor/skills/tgjobs-setup" tgjobs-setup "$DESC_SETUP" "$BODY/tgjobs-setup.md"
+  write_skill "$HOME/.cursor/skills/tg-intent"       tg-intent       "$DESC_JOBS"  "$BODY/tg-intent.md"
+  write_skill "$HOME/.cursor/skills/tg-intent-setup" tg-intent-setup "$DESC_SETUP" "$BODY/tg-intent-setup.md"
   say "Cursor: skills → ~/.cursor/skills/"
   local res
   res="$(python3 - "$HOME/.cursor/permissions.json" "$TGJOBS_HOME" <<'PY'
@@ -378,6 +378,14 @@ PY
     say "Cursor: couldn't update ~/.cursor/permissions.json — add 'python3 ${TGJOBS_HOME}/jobs' to terminalAllowlist yourself (nothing was changed)."
   fi
 }
+
+# --- remove pre-rename /tgjobs command files (renamed to /tg-intent) -----
+# Backend at ~/.tgjobs is unchanged; only the old command/skill files go.
+rm -f "$HOME/.claude/commands/tgjobs.md" "$HOME/.claude/commands/tgjobs-setup.md" \
+      "$HOME/.gemini/commands/tgjobs.toml" "$HOME/.gemini/commands/tgjobs-setup.toml" 2>/dev/null || true
+rm -rf "$HOME/.agents/skills/tgjobs" "$HOME/.agents/skills/tgjobs-setup" \
+       "$HOME/.codex/skills/tgjobs" "$HOME/.codex/skills/tgjobs-setup" \
+       "$HOME/.cursor/skills/tgjobs" "$HOME/.cursor/skills/tgjobs-setup" 2>/dev/null || true
 
 # --- install selected agents --------------------------------------------
 for a in $sel; do
@@ -409,6 +417,6 @@ say "Backend: ${TGJOBS_HOME}  (v${VER}, language: ${LANG_CHOICE})"
 if [ "$DO_UPDATE" -eq 1 ]; then
   say "Updated: $sel"
 else
-  say "Next: open one of the agents above and run  /tgjobs-setup"
-  say "Re-run any time to add another agent; /tgjobs will offer updates when available."
+  say "Next: open one of the agents above and run  /tg-intent-setup"
+  say "Re-run any time to add another agent; /tg-intent will offer updates when available."
 fi
