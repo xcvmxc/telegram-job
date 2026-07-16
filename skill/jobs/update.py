@@ -23,7 +23,7 @@ import config
 HOME = config.TGJOBS_HOME
 VERSION_FILE = HOME / "VERSION"
 STAMP_FILE = HOME / ".last_update_check"
-REMOTE_VERSION_URL = "https://raw.githubusercontent.com/xcvmxc/telegram-job/main/VERSION"
+REMOTE_VERSION_URL = "https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/VERSION"
 TIMEOUT = 3
 
 

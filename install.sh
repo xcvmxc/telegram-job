@@ -8,7 +8,7 @@
 # agent. Your state (~/.tgjobs/jobs/jobs.db) and config are never touched.
 #
 # Easiest (no clone):
-#   curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash
 #
 # Non-interactive:
 #   ./install.sh --lang en --agent claude,codex
@@ -19,7 +19,7 @@
 #
 set -euo pipefail
 
-REPO="xcvmxc/telegram-job"
+REPO="xcvmxc/telegram-intent"
 BRANCH="main"
 TARBALL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
@@ -174,7 +174,7 @@ cp -f "$ROOT"/templates/en/*.md "$TGJOBS_HOME/jobs/templates/en/"
 cp -f "$ROOT"/templates/ru/*.md "$TGJOBS_HOME/jobs/templates/ru/"
 cp -f "$ROOT"/skill/telegram/tg_scan.py "$TGJOBS_HOME/telegram/"
 cp -f "$ROOT/VERSION" "$TGJOBS_HOME/VERSION" 2>/dev/null || true
-printf 'telegram-job-scanner\ninstalled_at=%s\n' "$TS" > "$TGJOBS_HOME/.tgjobs-install"
+printf 'telegram-intent-scanner\ninstalled_at=%s\n' "$TS" > "$TGJOBS_HOME/.tgjobs-install"
 say "backend + templates (en/ru) installed  (v${VER})"
 
 # --- migrate an older ~/.claude product install --------------------------

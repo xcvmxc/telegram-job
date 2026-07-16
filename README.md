@@ -48,7 +48,7 @@ every agent you install it into uses the same channels, criteria and history.
 up, then installs:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash
 ```
 
 Prefer non-interactive? Pass flags (re-run any time to add another agent):
@@ -61,7 +61,7 @@ curl -fsSL .../install.sh | bash -s -- --lang en --agent claude,codex
 <details><summary>From a clone</summary>
 
 ```bash
-git clone https://github.com/xcvmxc/telegram-job.git && cd telegram-job
+git clone https://github.com/xcvmxc/telegram-intent.git && cd telegram-intent
 ./install.sh                 # interactive
 ./install.sh --lang ru --agent all
 ```
@@ -124,7 +124,7 @@ and **every agent** the skill is installed in, at once, keeping all your state.
 You can also update on demand:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-job/main/install.sh | bash -s -- --update
+curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash -s -- --update
 ```
 
 ## How it's put together
