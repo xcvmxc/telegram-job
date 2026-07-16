@@ -75,8 +75,12 @@ def _prune(conn: sqlite3.Connection, days: int) -> None:
     falling back to fetch/extract time). Channel cursors are kept, so resume
     still works — only the accumulated history is trimmed."""
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
-    conn.execute("DELETE FROM messages WHERE COALESCE(msg_date, fetched_at) < ?", (cutoff,))
-    conn.execute("DELETE FROM jobs WHERE COALESCE(msg_date, extracted_at) < ?", (cutoff,))
+    # Never prune messages that haven't been classified yet (a re-run of pull
+    # before the classify step must not silently drop pending inputs).
+    conn.execute("DELETE FROM messages WHERE is_processed = 1 AND COALESCE(msg_date, fetched_at) < ?", (cutoff,))
+    # Prune jobs by extracted_at — the same key the export dedup queries — so a
+    # just-extracted match from an older post survives its dedup window.
+    conn.execute("DELETE FROM jobs WHERE extracted_at < ?", (cutoff,))
     conn.commit()
 
 
@@ -526,12 +530,17 @@ def main() -> int:
     p_emit.add_argument("--since", default=None,
                         help="ISO timestamp; only include jobs extracted_at >= SINCE.")
 
+    p_prune = sub.add_parser("prune", help="Delete messages + jobs older than the retention window.")
+    p_prune.add_argument("--days", type=int, default=None,
+                         help="Retention window in days; defaults to config retention_days.")
+
     args = parser.parse_args()
     handler = {
         "pull": cmd_pull,
         "unclassified": cmd_unclassified,
         "save-classifications": cmd_save_classifications,
         "emit-files": cmd_emit_files,
+        "prune": cmd_prune,
     }[args.command]
     return handler(args)
 

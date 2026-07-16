@@ -69,15 +69,17 @@ def load() -> dict:
     # Export-time dedup window (days) for same company+position under a
     # different link. Default 3; 0 disables. Power users can set it in config.
     try:
-        data["export_dedup_days"] = max(0, int(data.get("export_dedup_days", 3)))
+        data["export_dedup_days"] = max(0, int(data.get("export_dedup_days", 2)))
     except (TypeError, ValueError):
-        data["export_dedup_days"] = 3
-    # How many days of messages + matched jobs to keep; older rows are pruned
-    # at the start of each pull. Channel cursors are never pruned.
+        data["export_dedup_days"] = 2
+    # How many days of messages + matched jobs to keep; older rows are pruned at
+    # the start of each pull (channel cursors are never pruned). Kept at least as
+    # long as the dedup window so pruning never breaks repost suppression.
     try:
         data["retention_days"] = max(1, int(data.get("retention_days", 2)))
     except (TypeError, ValueError):
         data["retention_days"] = 2
+    data["retention_days"] = max(data["retention_days"], data["export_dedup_days"])
     return data
 
 

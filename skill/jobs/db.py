@@ -7,7 +7,7 @@ Tables:
               cursor — the next scan fetches only messages with
               msg_id > last_msg_id.
 
-- messages    raw Telegram posts that contain at least one URL.
+- messages    raw Telegram posts that contain at least one URL or non-empty text.
               `is_processed` flips to 1 after the classifier has looked
               at the message, so it's never re-classified.
 

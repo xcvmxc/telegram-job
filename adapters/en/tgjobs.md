@@ -15,7 +15,7 @@ If the scanner isn't configured yet (any step prints "not set up" or
 - **Criteria:** `Search Criteria.md` in the same folder — plain-language
   description of what counts as a match. You read it and use it as the rubric.
 - **State:** `~/.tgjobs/jobs/jobs.db` (SQLite): `channels` (resume cursor per
-  channel), `messages` (raw posts with URLs), `jobs` (matched vacancies,
+  channel), `messages` (raw posts with a URL or text), `jobs` (matched vacancies,
   deduped by normalized link).
 - **Output:** `matches+YYYY-MM-DD_HHMM.md` in the job folder — only the
   vacancies matched in **this run**.

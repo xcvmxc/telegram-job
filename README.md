@@ -99,8 +99,8 @@ run, from any agent, so repeats are cheap and never duplicate.
 **Duplicate roles:** a match isn't written again if the same **company +
 position** already appeared in the last few days — even under a different link
 from another channel. Tune the window with `"export_dedup_days"` in
-`config.json` (default `3`, `0` disables). Exact-link duplicates are always
-dropped regardless.
+`config.json` (default `2`, `0` disables; capped by `retention_days`).
+Exact-link duplicates are always dropped regardless.
 
 **Links and posts:** `/tgjobs` matches on both apply links **and** whole text
 posts — a job post with no link is surfaced as the post itself (with a short
