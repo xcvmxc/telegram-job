@@ -68,9 +68,11 @@ git clone https://github.com/xcvmxc/telegram-job.git && cd telegram-job
 </details>
 
 The installer never touches your state (`~/.tgjobs/jobs/jobs.db`) or config, and
-backs up any agent config it merges into. **Codex** needs one manual line in
-`~/.codex/config.toml` (the installer prints it) so `/tgjobs` may reach the
-network and write outside the project — this is Codex's sandbox, by design.
+backs up any agent config it merges into. It also sets each agent up to run the
+pipeline **without prompting** — an allow-list for Claude Code / Gemini / Cursor,
+and for **Codex** it asks first before writing the sandbox + `approval_policy =
+never` into `~/.codex/config.toml` (that also lets `/tgjobs` reach the network
+and write outside the project — Codex's sandbox, by design).
 
 Then, in your agent, run **`/tgjobs-setup`** — a wizard that walks you through:
 
@@ -99,8 +101,14 @@ run, from any agent, so repeats are cheap and never duplicate.
 **Duplicate roles:** a match isn't written again if the same **company +
 position** already appeared in the last few days — even under a different link
 from another channel. Tune the window with `"export_dedup_days"` in
-`config.json` (default `3`, `0` disables). Exact-link duplicates are always
-dropped regardless.
+`config.json` (default `2`, `0` disables; capped by `retention_days`).
+Exact-link duplicates are always dropped regardless.
+
+**Links and posts:** `/tgjobs` matches on both apply links **and** whole text
+posts — a job post with no link is surfaced as the post itself (with a short
+excerpt). **Housekeeping:** stored messages and matches older than **2 days**
+are pruned at the start of each scan (tune with `"retention_days"` in
+`config.json`; it also caps the dedup window above).
 
 ## Language
 

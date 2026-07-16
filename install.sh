@@ -217,10 +217,44 @@ install_claude() {
   cp -f "$BODY/tgjobs.md"       "$HOME/.claude/commands/tgjobs.md"
   cp -f "$BODY/tgjobs-setup.md" "$HOME/.claude/commands/tgjobs-setup.md"
   say "Claude Code: /tgjobs + /tgjobs-setup → ~/.claude/commands/"
+  local res
+  res="$(python3 - "$HOME/.claude/settings.json" "$TGJOBS_HOME" <<'PY'
+import json, os, sys, pathlib, shutil
+f, home = pathlib.Path(sys.argv[1]), sys.argv[2]
+hm = os.path.expanduser("~")
+tilde = "~" + home[len(hm):] if home.startswith(hm) else home
+try:
+    data = json.loads(f.read_text()) if f.exists() else {}
+except Exception:
+    print("skip"); raise SystemExit
+if not isinstance(data, dict): data = {}
+if f.exists(): shutil.copyfile(f, str(f) + ".tgjobs.bak")
+f.parent.mkdir(parents=True, exist_ok=True)
+allow = data.setdefault("permissions", {}).setdefault("allow", [])
+rules = ["Bash(cat:*)"]
+for base in {tilde, home}:  # both ~ and absolute forms so either match style works
+    rules += [
+        f"Bash(python3 {base}/jobs/scan.py:*)",
+        f"Bash(python3 {base}/jobs/config.py:*)",
+        f"Bash(python3 {base}/jobs/setup.py:*)",
+        f"Bash(python3 {base}/jobs/update.py:*)",
+        f"Bash(uv run --with telethon python {base}/telegram/tg_scan.py:*)",
+    ]
+for r in rules:
+    if r not in allow: allow.append(r)
+f.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+print("merged")
+PY
+)" || res=skip
+  if [ "$res" = merged ]; then
+    say "Claude Code: settings.json — /tgjobs commands allow-listed, no prompts (backup .tgjobs.bak)"
+  else
+    say "Claude Code: couldn't update ~/.claude/settings.json — /tgjobs may ask for permission (harmless)."
+  fi
 }
 
 _codex_print_block() {
-  printf '      approval_policy = "on-request"\n      sandbox_mode   = "workspace-write"\n      [sandbox_workspace_write]\n      network_access = true\n      writable_roots = ["%s"]\n' "$TGJOBS_HOME"
+  printf '      approval_policy = "never"\n      sandbox_mode   = "workspace-write"\n      [sandbox_workspace_write]\n      network_access = true\n      writable_roots = ["%s"]\n' "$TGJOBS_HOME"
 }
 
 # Safely add the sandbox block to ~/.codex/config.toml. Only edits when neither
@@ -236,7 +270,7 @@ if ("sandbox_mode" in orig) or ("sandbox_workspace_write" in orig):
     print("manual"); raise SystemExit
 top = []
 if "approval_policy" not in orig:
-    top.append('approval_policy = "on-request"')
+    top.append('approval_policy = "never"')
 top.append('sandbox_mode = "workspace-write"')
 head = "\n".join(top) + "\n\n"
 table = f'[sandbox_workspace_write]\nnetwork_access = true\nwritable_roots = ["{home}"]\n'

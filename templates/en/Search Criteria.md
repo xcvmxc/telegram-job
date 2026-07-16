@@ -33,3 +33,10 @@ Anything else that helps the AI decide. Example:
 
 > I want individual-contributor and lead **product** roles, mid-to-senior.
 > Skip project managers, scrum masters, and delivery/program roles.
+
+## Results
+
+`/tgjobs` matches on **both apply links and whole posts**: if a matching posting
+has an application link, that link is the result; if a post describes a fitting
+role but has no link, the post itself is the result (with a short excerpt). You
+don't configure that here — the sections above decide *which* roles match.

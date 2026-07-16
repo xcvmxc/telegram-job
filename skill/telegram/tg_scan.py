@@ -31,7 +31,9 @@ import datetime as dt
 import json
 import os
 import pathlib
+import random
 import sys
+import time
 
 BASE = pathlib.Path(
     os.environ.get("TGJOBS_HOME") or (pathlib.Path.home() / ".tgjobs")
@@ -79,7 +81,12 @@ def make_client():
     from telethon.sync import TelegramClient
 
     api_id, api_hash = load_creds()
-    return TelegramClient(SESSION, api_id, api_hash)
+    client = TelegramClient(SESSION, api_id, api_hash)
+    # Auto-sleep through short flood-waits (<=60s); longer ones raise and are
+    # caught per-channel below. Reading history is light, but this keeps request
+    # bursts polite and avoids hard failures on transient flood limits.
+    client.flood_sleep_threshold = 60
+    return client
 
 
 def normalize_ref(ref: str) -> object:
@@ -210,12 +217,17 @@ def cmd_scan(args: argparse.Namespace) -> int:
         # channel. Warm the entity cache once and index it by marked id.
         cache: dict[int, object] = {}
         if any(isinstance(norm, int) for _, norm in norm_refs):
-            for dialog in client.iter_dialogs():
-                mid = marked_id(dialog.entity)
-                if mid is not None:
-                    cache[mid] = dialog.entity
+            try:
+                for dialog in client.iter_dialogs():
+                    mid = marked_id(dialog.entity)
+                    if mid is not None:
+                        cache[mid] = dialog.entity
+            except Exception as exc:  # noqa: BLE001 - a flood here must not abort the whole scan
+                eprint(f"  (dialog cache warm-up skipped: {type(exc).__name__})")
 
-        for ref, norm in norm_refs:
+        for i, (ref, norm) in enumerate(norm_refs):
+            if i:
+                time.sleep(random.uniform(0.5, 1.5))  # jitter between channels
             try:
                 if isinstance(norm, int):
                     entity = cache.get(norm) or cache.get(to_marked(norm))
@@ -243,29 +255,33 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 # the min_id path (the --days path below still needs
                 # newest-first for its `msg.date < cutoff` early break).
                 iter_kwargs["reverse"] = True
-            for msg in client.iter_messages(entity, **iter_kwargs):
-                if cutoff is not None and msg.date and msg.date < cutoff:
-                    break
-                text = msg.message or ""
-                # Extract links BEFORE the skip guard: a caption-less media post
-                # can still carry the real "Apply" link in an inline button.
-                urls = extract_urls(msg)
-                if not text.strip() and not urls:
-                    continue  # skip only pure media / service messages (no links)
-                results.append(
-                    {
-                        "channel_ref": ref,
-                        "channel_title": getattr(entity, "title", None),
-                        "channel_id": getattr(entity, "id", None),
-                        "channel_username": getattr(entity, "username", None),
-                        "msg_id": msg.id,
-                        "date": msg.date.isoformat() if msg.date else None,
-                        "permalink": permalink(entity, msg.id),
-                        "text": text,
-                        "urls": urls,
-                    }
-                )
-                count += 1
+            try:
+                for msg in client.iter_messages(entity, **iter_kwargs):
+                    if cutoff is not None and msg.date and msg.date < cutoff:
+                        break
+                    text = msg.message or ""
+                    # Extract links BEFORE the skip guard: a caption-less media
+                    # post can still carry the real "Apply" link in a button.
+                    urls = extract_urls(msg)
+                    if not text.strip() and not urls:
+                        continue  # skip only pure media / service messages
+                    results.append(
+                        {
+                            "channel_ref": ref,
+                            "channel_title": getattr(entity, "title", None),
+                            "channel_id": getattr(entity, "id", None),
+                            "channel_username": getattr(entity, "username", None),
+                            "msg_id": msg.id,
+                            "date": msg.date.isoformat() if msg.date else None,
+                            "permalink": permalink(entity, msg.id),
+                            "text": text,
+                            "urls": urls,
+                        }
+                    )
+                    count += 1
+            except Exception as exc:  # noqa: BLE001 - a flood/transient error here
+                # must not discard results already collected from other channels.
+                errors.append({"channel": ref, "error": f"{type(exc).__name__}: {exc}"})
             eprint(f"  {ref}: {count} messages")
 
     json.dump(
