@@ -8,14 +8,22 @@ Pipeline (subcommands driven by the /tg-intent command in whichever agent):
     unclassified         dump pending messages as JSON so the classifier can
                          decide is_job / is_match against the user's criteria
     save-classifications --json '...'   ingest the classifier's verdicts; store
-                                        MATCHING vacancies (dedup by link),
-                                        mark every message processed
-    emit-files [--since ISO]            write matches+<stamp>.md (localized) to
-                                        the user's folder (only this run's jobs)
+                                        MATCHING vacancies under the intent(s)
+                                        they fit (dedup by link+intent), mark
+                                        every message processed
+    emit-files [--since ISO]            write ONE file per intent to the user's
+                                        folder (only this run's jobs)
+
+Search Criteria.md can declare several INTENTS — independent searches, each with
+its own "look for / exclude / notes" and its own export file. An intent is a
+`## Intent: <name>` header (Russian `## Интент: <name>` also works). A file with
+no such headers is a single default search (output: matches+<stamp>.md).
 
 Everything user-specific lives in the folder from config.json:
+    <folder>/Search Criteria.md    what to look for, one or more intents
     <folder>/Telegram Sources.md   channels/groups to scan
-    <folder>/matches+<stamp>.md    output (title/columns/name follow config lang)
+    <folder>/<intent>+<stamp>.md   output, one file per intent (default intent
+                                   keeps the localized matches+/вакансии+ name)
 
 Stdlib only. Shells out to $TGJOBS_HOME/telegram/tg_scan.py (Telethon via uv).
 """
@@ -25,9 +33,11 @@ import argparse
 import datetime as dt
 import json
 import pathlib
+import re
 import sqlite3
 import subprocess
 import sys
+import unicodedata
 
 import config
 import db
@@ -70,6 +80,94 @@ def load_sources() -> list[str]:
             seen.add(line)
             refs.append(line)
     return refs
+
+
+# --- intents -------------------------------------------------------------
+
+# A declared intent is a header line `## Intent: <name>` (or Russian
+# `## Интент: <name>`), case-insensitive, up to 3 leading spaces of Markdown
+# indentation. The name after the colon becomes the intent's canonical label.
+_INTENT_HEADER = re.compile(
+    r"^\s{0,3}#{2,3}\s*(?:intent|интент)\s*:\s*(.+?)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _canon_intent(name: str) -> str:
+    """Comparison key for an intent name: NFC-normalized, casefolded, whitespace
+    collapsed. Used to reconcile classifier output to declared names and to key
+    the per-run file-collision set. The default intent is the empty string."""
+    return " ".join(unicodedata.normalize("NFC", name or "").casefold().split())
+
+
+def load_intents() -> list[str]:
+    """Parse the intents declared in `<folder>/Search Criteria.md`.
+
+    Returns the canonical display names (NFC-normalized, stripped) in file
+    order, de-duplicated case-insensitively. Names that are empty/whitespace
+    only after stripping are skipped. A file with no `## Intent:` headers
+    returns [] — the whole file is then one default search (intent '')."""
+    path = config.criteria_file()
+    if not path.exists():
+        return []
+    names: list[str] = []
+    seen: set[str] = set()
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        m = _INTENT_HEADER.match(raw)
+        if not m:
+            continue
+        name = unicodedata.normalize("NFC", m.group(1)).strip()
+        if not name:
+            continue
+        key = _canon_intent(name)
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(name)
+    return names
+
+
+# --- intent → filename ---------------------------------------------------
+
+# Path-unsafe on common filesystems; '+' too (it separates <intent>+<stamp>).
+_UNSAFE_FILENAME = re.compile(r'[\\/:\*\?"<>\|\+\x00-\x1f]')
+
+
+def _sanitize_filename_base(name: str, fallback_index: int) -> str:
+    """Turn a canonical intent name into a safe, readable filename base:
+    unsafe chars → space, whitespace collapsed, no leading dot/plus (avoids
+    hidden dotfiles), capped at 60 Unicode codepoints. Falls back to
+    `intent-<n>` when nothing printable survives."""
+    cleaned = _UNSAFE_FILENAME.sub(" ", name)
+    cleaned = " ".join(cleaned.split())
+    cleaned = cleaned.lstrip(".+ ").strip()
+    if len(cleaned) > 60:
+        cleaned = cleaned[:60].strip()
+    if not cleaned or set(cleaned) <= {"."}:
+        cleaned = f"intent-{fallback_index}"
+    return cleaned
+
+
+def _resolve_out_path(
+    out_dir: pathlib.Path,
+    base: str,
+    stamp: str,
+    used_norm: set,
+    reserved: set,
+) -> pathlib.Path:
+    """Pick a non-clashing `<base>+<stamp>.md` path. Bumps `base (1)`, `base (2)`
+    … when the NFC+casefold key is already taken this run, is reserved, or the
+    file already exists on disk (guards case/normalization-insensitive
+    filesystems like APFS and same-second reruns)."""
+    n = 0
+    while True:
+        cand = base if n == 0 else f"{base} ({n})"
+        key = _canon_intent(cand)
+        path = out_dir / f"{cand}+{stamp}.md"
+        if key not in used_norm and key not in reserved and not path.exists():
+            used_norm.add(key)
+            return path
+        n += 1
 
 
 # --- prune ---------------------------------------------------------------
@@ -247,6 +345,60 @@ def cmd_unclassified(args: argparse.Namespace) -> int:
 
 # --- save-classifications -----------------------------------------------
 
+def _matched_intents(ex: dict, declared_map: dict, has_headers: bool):
+    """Resolve which intents an extraction matched, as canonical names.
+
+    Returns a list of canonical intent names, or None for a genuine no-match.
+
+    Precedence: an explicit `intents` list wins; a singular `intent` string is
+    accepted next; `is_match` is consulted only when neither is present.
+    Names the classifier returns are reconciled to the DECLARED set (exact,
+    then NFC+casefold+whitespace match) — unrecognized/hallucinated names are
+    dropped, never minted into a new file. The stored value is always the
+    canonical declared name, so file names and headers can't drift.
+    """
+    raw_intents = ex.get("intents")
+    if isinstance(raw_intents, list):
+        out: list[str] = []
+        seen: set[str] = set()
+        for item in raw_intents:
+            if not isinstance(item, str):
+                continue
+            canon = declared_map.get(_canon_intent(item))
+            if canon is None:
+                continue  # unknown/drifted name — drop
+            if canon in seen:
+                continue
+            seen.add(canon)
+            out.append(canon)
+        if out:
+            return out
+        # An (effectively) empty intents list from a headered file is an
+        # authoritative no-match. With no headers it just means "use is_match".
+        if has_headers:
+            return None
+    elif isinstance(raw_intents, str):
+        canon = declared_map.get(_canon_intent(raw_intents))
+        if canon is not None:
+            return [canon]
+        if has_headers:
+            return None
+
+    single = ex.get("intent")
+    if isinstance(single, str) and single.strip():
+        canon = declared_map.get(_canon_intent(single))
+        if canon is not None:
+            return [canon]
+        if has_headers:
+            return None
+
+    # Legacy / headerless-default path: a plain is_match verdict files the role
+    # under the default intent ''.
+    if ex.get("is_match"):
+        return [""]
+    return None
+
+
 def cmd_save_classifications(args: argparse.Namespace) -> int:
     """Ingest the classifier's verdicts.
 
@@ -261,15 +413,18 @@ def cmd_save_classifications(args: argparse.Namespace) -> int:
                 "link": "https://...",
                 "position": "Product Manager",
                 "company": "Acme",
-                "is_job": true,      // a real single open role?
-                "is_match": true     // fits the user's Search Criteria?
+                "is_job": true,               // a real single open role?
+                "intents": ["Product Manager"] // which declared intents it fits
               }
             ]
           }
         ]
 
-    A vacancy is stored only when is_job AND is_match. Every listed message is
-    marked processed regardless, so the next run doesn't re-classify it.
+    `intents` lists the declared `## Intent:` names the role matches (a role may
+    match several). Files with no intents use the legacy `is_match` boolean, and
+    those rows land under the default intent ''. A vacancy is stored once per
+    matched intent (deduped by link+intent). Every listed message is marked
+    processed regardless, so the next run doesn't re-classify it.
     """
     raw = args.json
     if raw == "-" or raw is None:
@@ -291,6 +446,12 @@ def cmd_save_classifications(args: argparse.Namespace) -> int:
 
     conn = db.connect()
     now = dt.datetime.now(dt.timezone.utc).isoformat()
+
+    # Canonical declared intents drive reconciliation: the classifier's names
+    # are matched against THIS set, never used raw. Empty set → default search.
+    declared = load_intents()
+    declared_map = {_canon_intent(n): n for n in declared}
+    has_headers = bool(declared)
 
     msgs_processed = 0
     jobs_matched = 0
@@ -317,9 +478,10 @@ def cmd_save_classifications(args: argparse.Namespace) -> int:
         if not isinstance(exs, list):
             exs = []
         for ex in exs:
-            if not ex.get("is_job"):
+            if not isinstance(ex, dict) or not ex.get("is_job"):
                 continue
-            if not ex.get("is_match"):
+            intents = _matched_intents(ex, declared_map, has_headers)
+            if not intents:
                 jobs_skipped_nomatch += 1
                 continue
             link = (ex.get("link") or "").strip()
@@ -327,26 +489,24 @@ def cmd_save_classifications(args: argparse.Namespace) -> int:
             if not link_norm:
                 jobs_skipped_bad += 1
                 continue
-            existing = conn.execute(
-                "SELECT 1 FROM jobs WHERE link_norm = ?", (link_norm,)
-            ).fetchone()
-            if existing:
-                jobs_skipped_dupe += 1
-                continue
-            conn.execute(
-                "INSERT INTO jobs(link_norm, link, position, company,"
-                " msg_permalink, msg_date, channel_ref, excerpt, extracted_at)"
-                " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    link_norm, link,
-                    (ex.get("position").strip() if isinstance(ex.get("position"), str) else ""),
-                    (ex.get("company").strip() if isinstance(ex.get("company"), str) else ""),
-                    msg_permalink, msg_date, ch,
-                    (ex.get("excerpt").strip()[:200] if isinstance(ex.get("excerpt"), str) else ""),
-                    now,
-                ),
-            )
-            jobs_matched += 1
+            position = (ex.get("position").strip() if isinstance(ex.get("position"), str) else "")
+            company = (ex.get("company").strip() if isinstance(ex.get("company"), str) else "")
+            excerpt = (ex.get("excerpt").strip()[:200] if isinstance(ex.get("excerpt"), str) else "")
+            for intent in intents:
+                before = conn.total_changes
+                conn.execute(
+                    "INSERT OR IGNORE INTO jobs(link_norm, intent, link, position,"
+                    " company, msg_permalink, msg_date, channel_ref, excerpt, extracted_at)"
+                    " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        link_norm, intent, link, position, company,
+                        msg_permalink, msg_date, ch, excerpt, now,
+                    ),
+                )
+                if conn.total_changes > before:
+                    jobs_matched += 1
+                else:
+                    jobs_skipped_dupe += 1
 
         conn.execute(
             "UPDATE messages SET is_processed = 1"
@@ -368,9 +528,10 @@ def cmd_save_classifications(args: argparse.Namespace) -> int:
 
 # --- emit-files ----------------------------------------------------------
 
-# Wording of the emitted output file, per config `lang`. Everything else the
-# user sees is localized by the agent (it replies in the chosen language); this
-# file is written directly by Python, so it carries its own i18n.
+# Wording of each emitted output file, per config `lang`. `prefix` is the file
+# name of the DEFAULT (headerless) intent; named intents are filed under their
+# own name. Everything else the user sees is localized by the agent; these
+# files are written directly by Python, so they carry their own i18n.
 _EMIT_I18N = {
     "en": {
         "prefix": "matches",
@@ -393,7 +554,8 @@ def _md_cell(v: str) -> str:
     return (v or "").replace("\n", " ").replace("|", "\\|").strip()
 
 
-def _render_table(rows: list[sqlite3.Row], when_iso: str, lang: str = "en") -> str:
+def _render_table(rows: list[sqlite3.Row], when_iso: str, lang: str = "en",
+                  intent: str = "") -> str:
     # Group by (position, company). Rows are pre-sorted by msg_date DESC, so
     # the first appearance of a key fixes the group's position. Extra links /
     # posts for that group append to bulleted cells. Rows with empty position
@@ -427,8 +589,9 @@ def _render_table(rows: list[sqlite3.Row], when_iso: str, lang: str = "en") -> s
         return "<br>".join(f"• {x}" for x in items)
 
     s = _EMIT_I18N.get(lang, _EMIT_I18N["en"])
+    heading = s["title"] + (f" — {intent}" if intent else "")
     lines = [
-        f"# {s['title']}",
+        f"# {heading}",
         "",
         s["generated"].format(when=when_iso, n=len(order)),
         "",
@@ -454,64 +617,122 @@ def _norm_key(s: str) -> str:
 
 
 def cmd_emit_files(args: argparse.Namespace) -> int:
-    """Write matches+<stamp>.md (localized per config lang) since --since."""
+    """Write ONE file per intent (since --since), localized per config lang.
+
+    Rows are grouped by their stored intent. The default intent '' keeps the
+    localized matches+/вакансии+ name; every other intent gets a file named
+    after it. Export-time suppression is scoped per-intent so one intent's
+    recent hit can't hide another intent's brand-new role."""
     since = args.since or "1970-01-01T00:00:00+00:00"
     conn = db.connect()
     cfg = config.load()
     lang = cfg["lang"]
+    dedup_days = int(cfg.get("export_dedup_days", 3))
+    prefix = _EMIT_I18N.get(lang, _EMIT_I18N["en"])["prefix"]
 
     rows = conn.execute(
-        "SELECT position, company, link, msg_date, msg_permalink, excerpt"
+        "SELECT position, company, link, msg_date, msg_permalink, excerpt, intent"
         " FROM jobs WHERE extracted_at >= ?"
         " ORDER BY msg_date DESC, position ASC",
         (since,),
     ).fetchall()
 
-    # Export-time suppression: drop a role from THIS file if the same
-    # company+position was already surfaced in the last N days (even under a
-    # different link, from another channel). The row stays in the DB; only the
-    # output is filtered. Needs --since (this run's start) to define "prior",
-    # and both company + position non-empty to key on.
-    suppressed = 0
-    dedup_days = int(cfg.get("export_dedup_days", 3))
-    if args.since and dedup_days > 0 and rows:
-        window_start = (
-            dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=dedup_days)
-        ).isoformat()
-        prior = conn.execute(
-            "SELECT DISTINCT company, position FROM jobs"
-            " WHERE extracted_at >= ? AND extracted_at < ?",
-            (window_start, since),
-        ).fetchall()
-        seen = {
-            (_norm_key(r["company"]), _norm_key(r["position"]))
-            for r in prior
-            if (r["company"] or "").strip() and (r["position"] or "").strip()
-        }
-        if seen:
-            kept = []
-            for r in rows:
-                co, pos = (r["company"] or "").strip(), (r["position"] or "").strip()
-                if co and pos and (_norm_key(co), _norm_key(pos)) in seen:
-                    suppressed += 1
-                    continue
-                kept.append(r)
-            rows = kept
+    # Bucket this run's rows by intent. `key` is the canonical comparison key
+    # ('' for the default); `display` is the exact stored intent string, used
+    # both for the filename and for the per-intent suppression query below
+    # (save-classifications always stores the canonical declared name, so all
+    # of an intent's rows share one exact string).
+    buckets: dict[str, dict] = {}
+    order: list[str] = []
+    for r in rows:
+        intent = r["intent"] or ""
+        key = _canon_intent(intent)
+        b = buckets.get(key)
+        if b is None:
+            b = {"display": intent, "rows": []}
+            buckets[key] = b
+            order.append(key)
+        b["rows"].append(r)
 
+    # Surface declared intents that matched nothing this run (written = 0), so
+    # the agent can distinguish "skipped, no matches" from a stale old file.
+    for name in load_intents():
+        key = _canon_intent(name)
+        if key not in buckets:
+            buckets[key] = {"display": name, "rows": []}
+            order.append(key)
+
+    window_start = (
+        dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=dedup_days)
+    ).isoformat()
     now_utc = dt.datetime.now(dt.timezone.utc).isoformat()
-    stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M")
-
+    stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     out_dir = cfg["folder"]
     out_dir.mkdir(parents=True, exist_ok=True)
-    result: dict[str, object] = {"matches_written": 0, "suppressed_recent": suppressed, "path": None}
-    if rows:
-        prefix = _EMIT_I18N.get(lang, _EMIT_I18N["en"])["prefix"]
-        path = out_dir / f"{prefix}+{stamp}.md"
-        path.write_text(_render_table(rows, now_utc, lang), encoding="utf-8")
-        result["matches_written"] = len(rows)
-        result["path"] = str(path)
 
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # The localized default name is reserved so a user intent can't collide
+    # with it (both en + ru prefixes, defensively).
+    reserved = {_canon_intent(v["prefix"]) for v in _EMIT_I18N.values()}
+    used_norm: set[str] = set()
+
+    files: list[dict] = []
+    fallback_idx = 0
+    for key in order:
+        fallback_idx += 1
+        b = buckets[key]
+        display = b["display"]
+        brows = b["rows"]
+        is_default = key == ""
+
+        # Per-intent export suppression (scoped to THIS intent only).
+        suppressed = 0
+        if args.since and dedup_days > 0 and brows:
+            prior = conn.execute(
+                "SELECT DISTINCT company, position FROM jobs"
+                " WHERE extracted_at >= ? AND extracted_at < ? AND intent = ?",
+                (window_start, since, display),
+            ).fetchall()
+            seen = {
+                (_norm_key(pr["company"]), _norm_key(pr["position"]))
+                for pr in prior
+                if (pr["company"] or "").strip() and (pr["position"] or "").strip()
+            }
+            if seen:
+                kept = []
+                for r in brows:
+                    co, pos = (r["company"] or "").strip(), (r["position"] or "").strip()
+                    if co and pos and (_norm_key(co), _norm_key(pos)) in seen:
+                        suppressed += 1
+                        continue
+                    kept.append(r)
+                brows = kept
+
+        path_str = None
+        if brows:
+            if is_default:
+                # The default file may legitimately use the reserved name.
+                path = _resolve_out_path(out_dir, prefix, stamp, used_norm, set())
+            else:
+                base = _sanitize_filename_base(display, fallback_idx)
+                path = _resolve_out_path(out_dir, base, stamp, used_norm, reserved)
+            path.write_text(
+                _render_table(brows, now_utc, lang, intent=display),
+                encoding="utf-8",
+            )
+            path_str = str(path)
+
+        files.append({
+            "intent": display,
+            "path": path_str,
+            "written": len(brows),
+            "suppressed": suppressed,
+        })
+
+    print(json.dumps({
+        "files": files,
+        "matches_written": sum(f["written"] for f in files),
+        "suppressed_recent": sum(f["suppressed"] for f in files),
+    }, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -530,7 +751,7 @@ def main() -> int:
     p_save.add_argument("--json", required=True,
                         help="JSON string with classifications, or '-' for stdin.")
 
-    p_emit = sub.add_parser("emit-files", help="Write вакансии+<stamp>.md.")
+    p_emit = sub.add_parser("emit-files", help="Write one <intent>+<stamp>.md file per intent.")
     p_emit.add_argument("--since", default=None,
                         help="ISO timestamp; only include jobs extracted_at >= SINCE.")
 

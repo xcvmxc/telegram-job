@@ -1,42 +1,48 @@
-# What jobs am I looking for?
+# What I'm searching for
 
-Edit this file to tell the scanner which vacancies count as a match.
-Write in plain language — the AI reads this file on every run and keeps only
-the postings that fit. The more specific you are, the fewer irrelevant hits.
+This file holds one or more **intents**. An intent is a separate search — its
+own *look for / exclude / notes* — and **each intent gets its own export file**,
+named after it (e.g. `Product Manager+2026-07-16_1830.md`).
 
-**To change what you search for, just edit this file and run `/tg-intent` again.**
-No commands, no re-setup.
+Write in plain language. The AI reads this file on every run and files each
+matching posting under the intent(s) it fits (a posting can land in more than
+one). **To change what you search for, edit this file and run `/tg-intent`
+again.** No commands, no re-setup.
 
-Delete the examples below and describe your own search.
+Add as many intents as you like — copy an `## Intent:` block and rename it.
+Delete the examples below and describe your own.
 
 ---
 
-## I'm looking for
+## Intent: Product Manager
 
-- **Roles / titles:** e.g. Product Manager, Senior Product Manager, Product Owner
-- **Seniority:** e.g. mid to senior (no junior, no internships)
+**Look for:** Product Manager, Senior PM, Product Owner — mid to senior.
 
-## Must have
+**Exclude:** project / program / delivery management, scrum masters, pure sales,
+account management, support. No junior roles or internships.
 
-- e.g. A product role (not project/program management)
-- e.g. An individual-contributor or lead position
+**Notes:** individual-contributor and lead product roles. When you're unsure but
+it's plausibly relevant, keep it.
 
-## Skip these (not a match)
+---
 
-- e.g. Pure sales, account management, or support roles
-- e.g. Agencies / outsourcing shops
-- e.g. Unpaid or equity-only positions
+## Intent: Data & Analytics
 
-## Notes
+**Look for:** Data Analyst, Analytics Engineer, BI — SQL-heavy roles.
 
-Anything else that helps the AI decide. Example:
+**Exclude:** data entry, pure ML research, unpaid or equity-only.
 
-> I want individual-contributor and lead **product** roles, mid-to-senior.
-> Skip project managers, scrum masters, and delivery/program roles.
+**Notes:** remote or EU time zones preferred.
 
-## Results
+---
 
-`/tg-intent` matches on **both apply links and whole posts**: if a matching posting
-has an application link, that link is the result; if a post describes a fitting
-role but has no link, the post itself is the result (with a short excerpt). You
-don't configure that here — the sections above decide *which* roles match.
+### How it works
+
+- **One file per intent.** Each `## Intent:` above produces its own
+  `<name>+<timestamp>.md`. If you delete every `## Intent:` header, the whole
+  file becomes a single default search (output: `matches+<timestamp>.md`).
+- **Links and posts.** A matching role with an application link is surfaced as
+  that link; a fitting post with no link is surfaced as the post itself (with a
+  short excerpt).
+- **Renaming an intent** starts a fresh one — its recent-duplicate history
+  resets, so you may see a role reappear once within the next couple of days.

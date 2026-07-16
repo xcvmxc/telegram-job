@@ -65,6 +65,9 @@ overwrites files that already exist):
 Point them at the two files (use the real paths from step 3's output):
 
 1. **`Search Criteria.md`** — describe the roles they want in plain language.
+   It comes pre-filled with example **intents** (`## Intent: <name>` blocks) —
+   each intent is a separate search that writes its own export file. They can
+   keep one, add more, or delete the headers for a single default search.
    Editing this file is how they change what `/tg-intent` looks for.
 2. **`Telegram Sources.md`** — add one channel per line. Remind them: for
    **private** channels they must join the invite link in Telegram first, and

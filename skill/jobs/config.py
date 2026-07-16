@@ -11,11 +11,12 @@ Single source of truth: $TGJOBS_HOME/jobs/config.json
 
 `folder` holds the two files the user edits and receives the output:
 
-    <folder>/Search Criteria.md    what to look for (read by the classifier)
+    <folder>/Search Criteria.md    what to look for, one or more intents
     <folder>/Telegram Sources.md   channels/groups to scan
-    <folder>/matches+<stamp>.md    output written by `emit-files`
+    <folder>/<intent>+<stamp>.md   output written by `emit-files`, one per intent
+                                   (the default search keeps the matches+ name)
 
-`lang` (en|ru, default en) only affects the wording of the emitted output file.
+`lang` (en|ru, default en) only affects the wording of the emitted output files.
 
 Overrides for testing/power users: TGJOBS_HOME, JOBS_CONFIG.
 

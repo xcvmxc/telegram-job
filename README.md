@@ -21,15 +21,15 @@ need is a free personal Telegram API key.
 /tg-intent
   → reads your channel list          (Telegram Sources.md)
   → fetches new posts since last run  (per-channel cursor, nothing re-fetched)
-  → for each posting, the agent decides: is this a real job? does it match you?
-  → writes the matches                (matches+2026-07-13_1430.md)
+  → for each posting, the agent decides: is this a real job? which intent fits?
+  → writes one file per intent        (Product Manager+2026-07-13_1430.md, …)
 ```
 
 You control two plain-text files (in your chosen language):
 
 | File | What it's for |
 |------|---------------|
-| `Search Criteria.md`  | What you're looking for, in plain language. Edit it to change what `/tg-intent` keeps. |
+| `Search Criteria.md`  | What you're looking for, in plain language. Define one or more **intents** (separate searches) — each gets its own export file. |
 | `Telegram Sources.md` | Which channels/groups to scan, one per line. |
 
 The scanner's backend lives in a shared, agent-neutral home (`~/.tgjobs`), so
@@ -83,14 +83,18 @@ Then, in your agent, run **`/tg-intent-setup`** — a wizard that walks you thro
 
 ## Use it
 
-1. Edit **`Search Criteria.md`** — describe the roles you want.
+1. Edit **`Search Criteria.md`** — describe the roles you want. Split it into
+   several **intents** (`## Intent: <name>` blocks) if you're running more than
+   one search; each intent writes its own file. Leave the headers out for a
+   single default search.
 2. Edit **`Telegram Sources.md`** — add your channels (one per line). For
    **private** channels, join the invite link first, then add it. List every
    channel your account is in with:
    ```bash
    uv run --with telethon python ~/.tgjobs/telegram/tg_scan.py list
    ```
-3. Run **`/tg-intent`**. Read the `matches+...md` file it writes.
+3. Run **`/tg-intent`**. Read the `<intent>+...md` files it writes (one per
+   intent; the default search is `matches+...md`).
 
 Run `/tg-intent` whenever you like — it only looks at posts newer than the last
 run, from any agent, so repeats are cheap and never duplicate.
@@ -98,11 +102,12 @@ run, from any agent, so repeats are cheap and never duplicate.
 **To change what you search for:** edit `Search Criteria.md`. **Sources:** edit
 `Telegram Sources.md`. Nothing else — no re-setup.
 
-**Duplicate roles:** a match isn't written again if the same **company +
-position** already appeared in the last few days — even under a different link
-from another channel. Tune the window with `"export_dedup_days"` in
-`config.json` (default `2`, `0` disables; capped by `retention_days`).
-Exact-link duplicates are always dropped regardless.
+**Duplicate roles:** within one intent, a match isn't written again if the same
+**company + position** already appeared in the last few days — even under a
+different link from another channel. Different intents are independent, so a role
+that fits two of them appears in both files. Tune the window with
+`"export_dedup_days"` in `config.json` (default `2`, `0` disables; capped by
+`retention_days`). Exact-link duplicates are always dropped regardless.
 
 **Links and posts:** `/tg-intent` matches on both apply links **and** whole text
 posts — a job post with no link is surfaced as the post itself (with a short
