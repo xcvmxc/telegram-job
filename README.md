@@ -1,14 +1,15 @@
-# Telegram Job Scanner
+# Telegram Intent Scanner
 
 **English** · [Русский](README.ru.md)
 
-A skill for AI coding agents that scans the Telegram channels **you already
-follow**, keeps only the vacancies matching what you're looking for, and writes
-them to a tidy Markdown file — on demand, with one command: `/tg-intent`.
+A skill for AI coding agents that watches the Telegram channels **you already
+follow** and surfaces the posts matching **any intent you define** — job
+openings, apartment listings, freelance gigs, deals, product launches, leads —
+into a tidy Markdown file, on demand, with one command: `/tg-intent`.
 
-The matching is done by the agent itself, right inside your session.
-**There's no AI API key to buy and no server to run** — the only credential you
-need is a free personal Telegram API key.
+You describe each intent in plain language; the matching is done by the agent
+itself, right inside your session. **There's no AI API key to buy and no server
+to run** — the only credential you need is a free personal Telegram API key.
 
 **Works with:** Claude Code · OpenAI Codex · Gemini CLI · Cursor.
 **Languages:** English (default) or Russian — chosen at install.
@@ -21,19 +22,19 @@ need is a free personal Telegram API key.
 /tg-intent
   → reads your channel list          (Telegram Sources.md)
   → fetches new posts since last run  (per-channel cursor, nothing re-fetched)
-  → for each posting, the agent decides: is this a real job? which intent fits?
-  → writes one file per intent        (Product Manager+2026-07-13_1430.md, …)
+  → for each post, the agent decides: does it match any of your intents?
+  → writes one file per intent        (<intent>+2026-07-13_1430.md)
 ```
 
 You control two plain-text files (in your chosen language):
 
 | File | What it's for |
 |------|---------------|
-| `Search Criteria.md`  | What you're looking for, in plain language. Define one or more **intents** (separate searches) — each gets its own export file. |
+| `Search Criteria.md`  | What each intent should match, in plain language. Define one or more **intents** (a job hunt, an apartment search, a deal watch…) — each gets its own export file. |
 | `Telegram Sources.md` | Which channels/groups to scan, one per line, under an **Active** / **Inactive** section so you can park a channel without deleting it. |
 
 The scanner's backend lives in a shared, agent-neutral home (`~/.tgjobs`), so
-every agent you install it into uses the same channels, criteria and history.
+every agent you install it into uses the same channels, intents and history.
 
 ## Requirements
 
@@ -51,21 +52,13 @@ up, then installs:
 curl -fsSL https://raw.githubusercontent.com/xcvmxc/telegram-intent/main/install.sh | bash
 ```
 
-Prefer non-interactive? Pass flags (re-run any time to add another agent):
-
-```bash
-curl -fsSL .../install.sh | bash -s -- --lang en --agent claude,codex
-# --lang en|ru   --agent claude|codex|gemini|cursor|all (comma-separated)
-```
-
-<details><summary>From a clone</summary>
+### From a clone
 
 ```bash
 git clone https://github.com/xcvmxc/telegram-intent.git && cd telegram-intent
 ./install.sh                 # interactive
 ./install.sh --lang ru --agent all
 ```
-</details>
 
 The installer never touches your state (`~/.tgjobs/jobs/jobs.db`) or config, and
 backs up any agent config it merges into. It also sets each agent up to run the
@@ -78,43 +71,40 @@ Then, in your agent, run **`/tg-intent-setup`** — a wizard that walks you thro
 
 1. **Telegram API key** — free, ~1 min at [my.telegram.org](https://my.telegram.org) → *API development tools*.
 2. **Log in** — a one-time Telegram login.
-3. **Job folder** — where your files and results live; the two editable files
+3. **Output folder** — where your files and results live; the two editable files
    are scaffolded there in your chosen language.
 
 ## Use it
 
-1. Edit **`Search Criteria.md`** — describe the roles you want. Split it into
-   several **intents** (`## Intent: <name>` blocks) if you're running more than
-   one search; each intent writes its own file. Leave the headers out for a
-   single default search.
+1. Edit **`Search Criteria.md`** — describe what each intent should match, in
+   plain language. Give each its own **`## Intent: <name>`** block (e.g. a job
+   search, an apartment hunt, a deal watch); each intent writes its own file.
+   Leave the headers out for a single default search.
 2. Edit **`Telegram Sources.md`** — add your channels (one per line) under the
    **`## Active`** section; move any you want to pause down to **`## Inactive`**
    (kept, not scanned). For **private** channels, join the invite link first,
-   then add it. List every channel your account is in with:
-   ```bash
-   uv run --with telethon python ~/.tgjobs/telegram/tg_scan.py list
-   ```
+   then add it.
 3. Run **`/tg-intent`**. Read the `<intent>+...md` files it writes (one per
-   intent; the default search is `matches+...md`).
+   intent; a single default search is `matches+...md`).
 
 Run `/tg-intent` whenever you like — it only looks at posts newer than the last
 run, from any agent, so repeats are cheap and never duplicate.
 
-**To change what you search for:** edit `Search Criteria.md`. **Sources:** edit
+**To change what you look for:** edit `Search Criteria.md`. **Sources:** edit
 `Telegram Sources.md`. Nothing else — no re-setup.
 
-**Duplicate roles:** within one intent, a match isn't written again if the same
-**company + position** already appeared in the last few days — even under a
-different link from another channel. Different intents are independent, so a role
-that fits two of them appears in both files. Tune the window with
-`"export_dedup_days"` in `config.json` (default `2`, `0` disables; capped by
-`retention_days`). Exact-link duplicates are always dropped regardless.
+**Duplicate matches:** within one intent, a match isn't written again if the same
+item (by its two key fields — e.g. company + position for a job) already appeared
+in the last few days, even under a different link from another channel. Different
+intents are independent, so a post that fits two of them appears in both files.
+Tune the window with `"export_dedup_days"` in `config.json` (default `2`, `0`
+disables; capped by `retention_days`). Exact-link duplicates are always dropped.
 
-**Links and posts:** `/tg-intent` matches on both apply links **and** whole text
-posts — a job post with no link is surfaced as the post itself (with a short
-excerpt). **Housekeeping:** stored messages and matches older than **2 days**
-are pruned at the start of each scan (tune with `"retention_days"` in
-`config.json`; it also caps the dedup window above).
+**Links and posts:** `/tg-intent` matches on both links **and** whole text posts
+— a matching post with no link is surfaced as the post itself (with a short
+excerpt). **Housekeeping:** stored messages and matches older than **2 days** are
+pruned at the start of each scan (tune with `"retention_days"` in `config.json`;
+it also caps the dedup window above).
 
 ## Language
 
@@ -152,14 +142,6 @@ per agent (thin adapter → points at ~/.tgjobs):
   Cursor        ~/.cursor/skills/tg-intent{,-setup}/SKILL.md (+ permissions.json)
 ```
 
-## A note on Telegram's terms
-
-This reads channels through your own user account (via
-[Telethon](https://docs.telethon.dev/)) — the same content you already see in
-the app. Automating a user account is a grey area under Telegram's Terms and,
-used aggressively, can get an account limited or banned. Scan at a human pace,
-only channels you're a member of, and use it at your own risk.
-
 ## Uninstall
 
 ```bash
@@ -172,7 +154,7 @@ rm -rf ~/.tgjobs \
 
 Merged agent configs (`~/.gemini/settings.json`, `~/.cursor/permissions.json`,
 `~/.codex/config.toml`) keep `.tgjobs.bak` backups; edit them back by hand if
-you want the allowlist entries gone. Your job folder is left alone.
+you want the allowlist entries gone. Your output folder is left alone.
 
 ## License
 
